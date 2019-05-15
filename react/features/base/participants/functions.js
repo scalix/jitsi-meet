@@ -57,6 +57,11 @@ export function getAvatarURL({ avatarID, avatarURL, email, id }: {
                 urlSuffix: interfaceConfig.RANDOM_AVATAR_URL_SUFFIX }
             : undefined;
 
+
+    if (!id && !email && !avatarID) {
+        return '';
+    }
+
     // eslint-disable-next-line object-property-newline
     return _getAvatarURL({ avatarID, email, id }, avatarService);
 }

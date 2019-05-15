@@ -338,7 +338,8 @@ function _participantJoinedOrUpdated({ getState }, next, action) {
     }
 
     // Notify external listeners of potential avatarURL changes.
-    if (typeof APP === 'object') {
+    if (typeof APP === 'object' && id) {
+
         const oldAvatarURL = getAvatarURLByParticipantId(getState(), id);
 
         // Allow the redux update to go through and compare the old avatar
