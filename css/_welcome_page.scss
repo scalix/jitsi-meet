@@ -8,7 +8,7 @@ body.welcome-page {
     display: flex;
     flex-direction: column;
     font-family: $welcomePageFontFamily;
-    justify-content: space-between;
+    justify-content: space-evenly;
     min-height: 100vh;
     position: relative;
 

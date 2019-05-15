@@ -66,8 +66,7 @@ class WelcomePage extends AbstractWelcomePage {
         // Bind event handlers so they are only bound once per instance.
         this._onFormSubmit = this._onFormSubmit.bind(this);
         this._onRoomChange = this._onRoomChange.bind(this);
-        this._setAdditionalContentRef
-            = this._setAdditionalContentRef.bind(this);
+        this._setAdditionalContentRef = this._setAdditionalContentRef.bind(this);
         this._onTabSelected = this._onTabSelected.bind(this);
     }
 
@@ -111,7 +110,6 @@ class WelcomePage extends AbstractWelcomePage {
      */
     render() {
         const { t } = this.props;
-        const { APP_NAME } = interfaceConfig;
         const showAdditionalContent = this._shouldShowAdditionalContent();
 
         return (
@@ -128,15 +126,7 @@ class WelcomePage extends AbstractWelcomePage {
                             defaultTab = { SETTINGS_TABS.CALENDAR } />
                     </div>
                     <div className = 'header-image' />
-                    <div className = 'header-text'>
-                        <h1 className = 'header-text-title'>
-                            { t('welcomepage.title') }
-                        </h1>
-                        <p className = 'header-text-description'>
-                            { t('welcomepage.appDescription',
-                                { app: APP_NAME }) }
-                        </p>
-                    </div>
+
                     <div id = 'enter_room'>
                         <div className = 'enter-room-input-container'>
                             <div className = 'enter-room-title'>
