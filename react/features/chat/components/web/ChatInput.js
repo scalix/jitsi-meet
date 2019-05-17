@@ -2,6 +2,7 @@
 
 import React, { Component } from 'react';
 import Emoji from 'react-emoji-render';
+import TextareaAutosize from 'react-textarea-autosize';
 import type { Dispatch } from 'redux';
 
 import { translate } from '../../../base/i18n';
@@ -22,9 +23,10 @@ type Props = {
     dispatch: Dispatch<any>,
 
     /**
-     * Optional callback to get a reference to the chat input element.
+     * Optional callback to invoke when the chat textarea has auto-resized to
+     * fit overflowing text.
      */
-    getChatInputRef?: Function,
+    onResize: ?Function,
 
     /**
      * Invoked to obtain translated strings.
@@ -90,7 +92,7 @@ class ChatInput extends Component<Props, State> {
          * HTML Textareas do not support autofocus. Simulate autofocus by
          * manually focusing.
          */
-        this.focus();
+        this._focus();
     }
 
     /**
@@ -119,12 +121,14 @@ class ChatInput extends Component<Props, State> {
                     </div>
                 </div>
                 <div className = 'usrmsg-form'>
-                    <textarea
+                    <TextareaAutosize
                         id = 'usermsg'
+                        inputRef = { this._setTextAreaRef }
+                        maxRows = { 5 }
                         onChange = { this._onMessageChange }
+                        onHeightChange = { this.props.onResize }
                         onKeyDown = { this._onDetectSubmit }
                         placeholder = { this.props.t('chat.messagebox') }
-                        ref = { this._setTextAreaRef }
                         value = { this.state.message } />
                 </div>
             </div>
@@ -132,20 +136,12 @@ class ChatInput extends Component<Props, State> {
     }
 
     /**
-     * Removes cursor focus on this component's text area.
-     *
-     * @returns {void}
-     */
-    blur() {
-        this._textArea && this._textArea.blur();
-    }
-
-    /**
      * Place cursor focus on this component's text area.
      *
+     * @private
      * @returns {void}
      */
-    focus() {
+    _focus() {
         this._textArea && this._textArea.focus();
     }
 
@@ -203,7 +199,7 @@ class ChatInput extends Component<Props, State> {
             showSmileysPanel: false
         });
 
-        this.focus();
+        this._focus();
     }
 
     _onToggleSmileysPanel: () => void;
@@ -217,7 +213,7 @@ class ChatInput extends Component<Props, State> {
     _onToggleSmileysPanel() {
         this.setState({ showSmileysPanel: !this.state.showSmileysPanel });
 
-        this.focus();
+        this._focus();
     }
 
     _setTextAreaRef: (?HTMLTextAreaElement) => void;
@@ -231,10 +227,6 @@ class ChatInput extends Component<Props, State> {
      */
     _setTextAreaRef(textAreaElement: ?HTMLTextAreaElement) {
         this._textArea = textAreaElement;
-
-        if (this.props.getChatInputRef) {
-            this.props.getChatInputRef(textAreaElement);
-        }
     }
 }
 
