@@ -46,15 +46,15 @@ deploy-lib-jitsi-meet:
 		$(LIBJITSIMEET_DIR)/connection_optimization/external_connect.js \
 		$(LIBJITSIMEET_DIR)/modules/browser/capabilities.json \
 		$(DEPLOY_DIR)
-	gzip $(DEPLOY_DIR)/lib-jitsi-meet.min.js
-	gzip $(DEPLOY_DIR)/lib-jitsi-meet.min.map
+	gzip $(DEPLOY_DIR)/lib-jitsi-meet.min.js -k
+	gzip $(DEPLOY_DIR)/lib-jitsi-meet.min.map -k
 
 deploy-libflac:
 	cp \
 		$(LIBFLAC_DIR)/libflac4-1.3.2.min.js \
 		$(LIBFLAC_DIR)/libflac4-1.3.2.min.js.mem \
 		$(DEPLOY_DIR)
-	gzip $(DEPLOY_DIR)/libflac4-1.3.2.min.js
+	gzip $(DEPLOY_DIR)/libflac4-1.3.2.min.js -k
 
 deploy-css:
 	$(NODE_SASS) $(STYLES_MAIN) $(STYLES_BUNDLE) && \

@@ -76,18 +76,26 @@ export function getDeepLinkingPage(state) {
         return Promise.resolve();
     }
 
-    const OS = Platform.OS;
-    const isUsingMobileBrowser = OS === 'android' || OS === 'ios';
+    if (typeof interfaceConfig === 'object') {
+        const {
+            OPEN_IN_MOBILE_BROWSER: openInMobileBrowser = true,
+            MOBILE_APP_PROMO: mobileAppPromo = true
+        } = interfaceConfig || {
+            OPEN_IN_MOBILE_BROWSER: true,
+            MOBILE_APP_PROMO: true
+        };
 
-    if (isUsingMobileBrowser) { // mobile
-        const mobileAppPromo
-            = typeof interfaceConfig === 'object'
-                && interfaceConfig.MOBILE_APP_PROMO;
+        if (openInMobileBrowser !== undefined && !openInMobileBrowser) {
+            const OS = Platform.OS;
+            const isUsingMobileBrowser = OS === 'android' || OS === 'ios';
 
-        return Promise.resolve(
-            typeof mobileAppPromo === 'undefined' || Boolean(mobileAppPromo)
-                ? DeepLinkingMobilePage : NoMobileApp);
+            if (isUsingMobileBrowser) { // mobile
+                return Promise.resolve(
+                    mobileAppPromo ? DeepLinkingMobilePage : NoMobileApp);
+            }
+        }
     }
+
 
     // desktop
     const { launchInWeb } = state['features/deep-linking'];
