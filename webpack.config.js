@@ -1,6 +1,7 @@
 /* global __dirname */
 
 const process = require('process');
+const CompressionPlugin = require('compression-webpack-plugin');
 
 /**
  * The URL of the Jitsi Meet deployment to be proxy to in the context of
@@ -123,7 +124,10 @@ const config = {
             '.js',
             '.json'
         ]
-    }
+    },
+    plugins: [
+        new CompressionPlugin()
+    ]
 };
 
 module.exports = [

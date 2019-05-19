@@ -226,7 +226,10 @@ subprojects { subproject ->
                 && rootProject.ext.has('buildToolsVersion')) {
             android {
                 buildToolsVersion rootProject.ext.buildToolsVersion
+
             }
         }
     }
 }
+
+

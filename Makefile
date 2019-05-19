@@ -28,23 +28,15 @@ deploy-init:
 
 deploy-appbundle:
 	cp \
-		$(BUILD_DIR)/app.bundle.min.js \
-		$(BUILD_DIR)/app.bundle.min.map \
-		$(BUILD_DIR)/do_external_connect.min.js \
-		$(BUILD_DIR)/do_external_connect.min.map \
-		$(BUILD_DIR)/external_api.min.js \
-		$(BUILD_DIR)/external_api.min.map \
-		$(BUILD_DIR)/flacEncodeWorker.min.js \
-		$(BUILD_DIR)/flacEncodeWorker.min.map \
-		$(BUILD_DIR)/device_selection_popup_bundle.min.js \
-		$(BUILD_DIR)/device_selection_popup_bundle.min.map \
-		$(BUILD_DIR)/dial_in_info_bundle.min.js \
-		$(BUILD_DIR)/dial_in_info_bundle.min.map \
-		$(BUILD_DIR)/alwaysontop.min.js \
-		$(BUILD_DIR)/alwaysontop.min.map \
+		$(BUILD_DIR)/app.bundle.min.* \
+		$(BUILD_DIR)/do_external_connect.min.* \
+		$(BUILD_DIR)/external_api.min.* \
+		$(BUILD_DIR)/flacEncodeWorker.min.* \
+		$(BUILD_DIR)/device_selection_popup_bundle.min.* \
+		$(BUILD_DIR)/dial_in_info_bundle.min.* \
+		$(BUILD_DIR)/alwaysontop.min.* \
 		$(OUTPUT_DIR)/analytics-ga.js \
-		$(BUILD_DIR)/analytics-ga.min.js \
-		$(BUILD_DIR)/analytics-ga.min.map \
+		$(BUILD_DIR)/analytics-ga.min.* \
 		$(DEPLOY_DIR)
 
 deploy-lib-jitsi-meet:
@@ -54,12 +46,15 @@ deploy-lib-jitsi-meet:
 		$(LIBJITSIMEET_DIR)/connection_optimization/external_connect.js \
 		$(LIBJITSIMEET_DIR)/modules/browser/capabilities.json \
 		$(DEPLOY_DIR)
+	gzip $(DEPLOY_DIR)/lib-jitsi-meet.min.js
+	gzip $(DEPLOY_DIR)/lib-jitsi-meet.min.map
 
 deploy-libflac:
 	cp \
 		$(LIBFLAC_DIR)/libflac4-1.3.2.min.js \
 		$(LIBFLAC_DIR)/libflac4-1.3.2.min.js.mem \
 		$(DEPLOY_DIR)
+	gzip $(DEPLOY_DIR)/libflac4-1.3.2.min.js
 
 deploy-css:
 	$(NODE_SASS) $(STYLES_MAIN) $(STYLES_BUNDLE) && \
