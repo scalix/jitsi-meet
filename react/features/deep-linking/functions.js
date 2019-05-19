@@ -82,7 +82,7 @@ export function getDeepLinkingPage(state) {
             MOBILE_APP_PROMO: mobileAppPromo = true
         } = interfaceConfig;
 
-        if (openInMobileBrowser !== undefined && !openInMobileBrowser) {
+        if (!openInMobileBrowser) {
             const OS = Platform.OS;
             const isUsingMobileBrowser = OS === 'android' || OS === 'ios';
 
