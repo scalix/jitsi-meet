@@ -1,4 +1,4 @@
-/* global APP, JitsiMeetJS, config */
+/* global APP, JitsiMeetJS, config, interfaceConfig */
 
 import AuthHandler from './modules/UI/authentication/AuthHandler';
 import jitsiLocalStorage from './modules/util/JitsiLocalStorage';
@@ -176,12 +176,18 @@ export function openConnection({ id, password, retry, roomName }) {
         password = passwordOverride; // eslint-disable-line no-param-reassign
     }
 
+    const { issuer, jwt } = APP.store.getState()['features/base/jwt'];
+    const notAuthorizedGuest = !jwt || issuer === 'anonymous';
+
+    if (interfaceConfig.AUTHENTICATION_ENABLE
+            && (!id && !password && notAuthorizedGuest)) {
+        return AuthHandler.requestAuth(roomName, connect);
+    }
+
     return connect(id, password, roomName).catch(err => {
         if (retry) {
-            const { issuer, jwt } = APP.store.getState()['features/base/jwt'];
-
             if (err === JitsiConnectionErrors.PASSWORD_REQUIRED
-                    && (!jwt || issuer === 'anonymous')) {
+                    && notAuthorizedGuest) {
                 return AuthHandler.requestAuth(roomName, connect);
             }
         }
