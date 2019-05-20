@@ -9,8 +9,13 @@ import { CalendarList } from '../../calendar-sync';
 import { RecentList } from '../../recent-list';
 import { SettingsButton, SETTINGS_TABS } from '../../settings';
 
-import { AbstractWelcomePage, _mapStateToProps } from './AbstractWelcomePage';
+import {
+    AbstractWelcomePage,
+    _mapStateToProps as _abstractMapStateToProps
+} from './AbstractWelcomePage';
+
 import Tabs from './Tabs';
+
 
 /**
  * The Web container rendering the welcome page.
@@ -43,6 +48,8 @@ class WelcomePage extends AbstractWelcomePage {
                 interfaceConfig.GENERATE_ROOMNAMES_ON_WELCOME_PAGE,
             selectedTab: 0
         };
+
+        console.log(this);
 
         /**
          * The HTML Element used as the container for additional content. Used
@@ -264,6 +271,20 @@ class WelcomePage extends AbstractWelcomePage {
             && this._additionalContentTemplate.content
             && this._additionalContentTemplate.innerHTML.trim();
     }
+}
+
+/**
+ * Maps part of the Redux state to the props of this component.
+ *
+ * @param {Object} state - The Redux state.
+ * @returns {{
+ *     _headerStyles: Object
+ * }}
+ */
+function _mapStateToProps(state) {
+    return {
+        ..._abstractMapStateToProps(state)
+    };
 }
 
 export default translate(connect(_mapStateToProps)(WelcomePage));
