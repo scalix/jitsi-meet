@@ -1,14 +1,14 @@
-/* global interfaceConfig */
+/* global interfaceConfig, APP*/
 
 import React from 'react';
 
 import { translate } from '../../base/i18n';
 import { Platform, Watermarks } from '../../base/react';
-import { connect } from '../../base/redux';
 import { CalendarList } from '../../calendar-sync';
 import { RecentList } from '../../recent-list';
 import { SettingsButton, SETTINGS_TABS } from '../../settings';
-
+import { connect } from '../../base/redux';
+import { openConnection } from '../../../../connection';
 import {
     AbstractWelcomePage,
     _mapStateToProps as _abstractMapStateToProps
@@ -46,10 +46,10 @@ class WelcomePage extends AbstractWelcomePage {
 
             generateRoomnames:
                 interfaceConfig.GENERATE_ROOMNAMES_ON_WELCOME_PAGE,
-            selectedTab: 0
+            selectedTab: 0,
+            loading: true
         };
 
-        console.log(this);
 
         /**
          * The HTML Element used as the container for additional content. Used
@@ -87,15 +87,25 @@ class WelcomePage extends AbstractWelcomePage {
     componentDidMount() {
         document.body.classList.add('welcome-page');
 
-        if (this.state.generateRoomnames) {
-            this._updateRoomname();
-        }
+        openConnection({
+            retry: true
+        }).then(con => {
+            APP.connection = con;
+            this.setState({ loading: false });
+            if (this.state.generateRoomnames) {
+                this._updateRoomname();
+            }
 
-        if (this._shouldShowAdditionalContent()) {
-            this._additionalContentRef.appendChild(
-                this._additionalContentTemplate.content.cloneNode(true));
-        }
+            if (this._shouldShowAdditionalContent()) {
+                this._additionalContentRef.appendChild(
+                    this._additionalContentTemplate.content.cloneNode(true));
+            }
+        })
+        .catch(err => {
+            console.error(err);
+        });
     }
+
 
     /**
      * Removes the classname used for custom styling of the welcome page.
@@ -107,6 +117,10 @@ class WelcomePage extends AbstractWelcomePage {
         super.componentWillUnmount();
 
         document.body.classList.remove('welcome-page');
+
+        if (APP.connection) {
+            APP.connection.disconnect();
+        }
     }
 
     /**
@@ -116,8 +130,21 @@ class WelcomePage extends AbstractWelcomePage {
      * @returns {ReactElement|null}
      */
     render() {
+
         const { t } = this.props;
         const showAdditionalContent = this._shouldShowAdditionalContent();
+
+        console.log(this.state);
+
+        // alert(this.state.isLoading);
+        if (this.state.loading) {
+            return (
+                <img
+                    height = '100%'
+                    src = './images/index.futuristic-game-interface-preloader.svg'
+                    width = '100%' />
+            );
+        }
 
         return (
             <div
