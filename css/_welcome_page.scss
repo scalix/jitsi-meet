@@ -3,6 +3,7 @@ body.welcome-page {
     overflow: auto;
 }
 
+
 .welcome {
     background-image: $welcomePageHeaderBackground;
     display: flex;
@@ -157,9 +158,17 @@ body.welcome-page {
         right: 32px;
         z-index: $zindex2;
 
-        * {
+        > div:first-child {
             cursor: pointer;
             font-size: 32px;
+            float: left;
+        }
+
+        .logout {
+            font-size: 25px;
+            float: right;
+            line-height: 47px;
+            padding: 0px 15px;
         }
     }
 

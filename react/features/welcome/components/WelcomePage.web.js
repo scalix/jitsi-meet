@@ -1,4 +1,4 @@
-/* global interfaceConfig, APP */
+/* global interfaceConfig, APP, localtion */
 
 import React from 'react';
 
@@ -125,8 +125,9 @@ class WelcomePage extends AbstractWelcomePage {
      */
     render() {
 
-        const { t, loading } = this.props;
+        const { t, loading, _displayName } = this.props;
         const showAdditionalContent = this._shouldShowAdditionalContent();
+        const { APP_NAME } = interfaceConfig;
 
         if (loading) {
             return (
@@ -158,9 +159,19 @@ class WelcomePage extends AbstractWelcomePage {
                     <div className = 'welcome-page-settings'>
                         <SettingsButton
                             defaultTab = { SETTINGS_TABS.CALENDAR } />
+                        <a
+                            className = 'logout'
+                            onClick = { this._onReset } >Logout</a>
                     </div>
                     <div className = 'header-image' />
-
+                    <div className = 'header-text'>
+                        <h3 className = 'header-text-title'>
+                            Welcome, {_displayName}.
+                        </h3>
+                        <p className = 'header-text-description'>
+                            {APP_NAME} - { t('welcomepage.title') }
+                        </p>
+                    </div>
                     <div id = 'enter_room'>
                         <div className = 'enter-room-input-container'>
                             <div className = 'enter-room-title'>
@@ -194,6 +205,19 @@ class WelcomePage extends AbstractWelcomePage {
                     : null }
             </div>
         );
+    }
+
+    /**
+     * Clear local storage.
+     *
+     * @param {Event} event - The HTML Event which details the form submission.
+     * @private
+     * @returns {void}
+     */
+    _onReset(event) {
+        event.preventDefault();
+        window.localStorage.clear();
+        localtion.reload();
     }
 
     /**
