@@ -38,6 +38,10 @@ function on_message(event)
         end
 
         local roomSpeakerStats = room.speakerStats;
+        if not roomSpeakerStats then
+            log("warn", "No roomSpeakerStats room found for %s", room);
+            return false;
+        end
         local from = event.stanza.attr.from;
 
         local occupant = room:get_occupant_by_real_jid(from);
