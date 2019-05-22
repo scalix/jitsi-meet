@@ -1,15 +1,11 @@
 // @flow
-/* global  $ */
 
 import { equals, ReducerRegistry } from '../redux';
 
 import { SET_JWT } from './actionTypes';
 import { APP_WILL_MOUNT } from '../app';
 import { SET_CONFIG } from '../config';
-import { CONNECTION_ESTABLISHED } from '../connection';
-import { $iq } from 'strophe.js';
-import { setJWT } from './actions';
-import { getLocalJWT, saveLocalJWT } from './functions';
+import { getLocalJWT } from './functions';
 
 declare var APP: Object;
 
@@ -31,45 +27,6 @@ const DEFAULT_STATE = {
     isGuest: true
 };
 
-
-/**
- * Dummy.
- *
- * @param {Object} connection - X.
- * @param {Object} state - X.
- * @private
- * @returns {void}
- */
-function _checkJWT({ connection }, state) {
-    const token = getLocalJWT();
-
-    if (token) {
-        return setJWT(token.jwt);
-    }
-
-    connection.xmpp.connection.sendIQ(
-        $iq({ type: 'get',
-            to: connection.xmpp.connection.domain })
-            .c('token', { xmlns: 'urn:xmpp:token:gen:1' }),
-        res => {
-            const jwtData = {
-                jwt: $(res).find('>token')
-                    .first()
-                    .attr('token'),
-                isGuest: false
-            };
-
-            saveLocalJWT(jwtData);
-
-            APP.store.dispatch(setJWT(jwtData.jwt));
-        },
-        err => {
-            console.error(err);
-        }
-    );
-
-    return state;
-}
 
 /**
  * Reduces redux actions which affect the JSON Web Token (JWT) stored in the
@@ -98,10 +55,6 @@ ReducerRegistry.register(
             };
 
             return equals(state, nextState) ? state : nextState;
-        }
-
-        case CONNECTION_ESTABLISHED: {
-            return _checkJWT(action, state);
         }
         }
 

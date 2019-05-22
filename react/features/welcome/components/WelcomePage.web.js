@@ -1,4 +1,4 @@
-/* global interfaceConfig, APP, localtion */
+/* global interfaceConfig, APP */
 
 import React from 'react';
 
@@ -31,7 +31,8 @@ class WelcomePage extends AbstractWelcomePage {
      * @static
      */
     static defaultProps = {
-        _room: ''
+        _room: '',
+        loading: true
     };
 
     /**
@@ -217,7 +218,7 @@ class WelcomePage extends AbstractWelcomePage {
     _onReset(event) {
         event.preventDefault();
         window.localStorage.clear();
-        localtion.reload();
+        window.location.reload();
     }
 
     /**

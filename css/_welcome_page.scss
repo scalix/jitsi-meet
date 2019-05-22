@@ -158,6 +158,10 @@ body.welcome-page {
         right: 32px;
         z-index: $zindex2;
 
+        * {
+            cursor: pointer;
+        }
+
         > div:first-child {
             cursor: pointer;
             font-size: 32px;

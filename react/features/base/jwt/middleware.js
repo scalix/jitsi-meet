@@ -1,10 +1,10 @@
 // @flow
-/* global window */
+/* global window, $ */
 
 import jwtDecode from 'jwt-decode';
 
 import { SET_CONFIG } from '../config';
-import { SET_LOCATION_URL } from '../connection';
+import { CONNECTION_ESTABLISHED, SET_LOCATION_URL } from '../connection';
 import {
     getLocalParticipant,
     participantUpdated
@@ -16,7 +16,58 @@ import { SET_JWT } from './actionTypes';
 import { parseJWTFromURLParams, getLocalJWT, saveLocalJWT } from './functions';
 import { updateSettings } from '../settings';
 
+import { $iq } from 'strophe.js';
+
 declare var APP: Object;
+
+/**
+ * Dummy.
+ *
+ * @param {Store} store - The redux store in which the specified {@code action}
+ * is being dispatched.
+ * @param {Dispatch} next - The redux dispatch function to dispatch the
+ * specified {@code action} to the specified {@code store}.
+ * @param {Action} action - The redux action {@code SET_CONFIG} or
+ * {@code SET_LOCATION_URL} which is being dispatched in the specified
+ * {@code store}.
+ * @private
+ * @returns {void}
+ */
+function _checkJWT({ dispatch, getState }, next, action) {
+    const result = next(action) || getState()['\'features/base/jwt\''];
+    const token = getLocalJWT();
+
+    if (token) {
+        dispatch(setJWT(token.jwt));
+
+        return result;
+    }
+
+    const { connection } = action;
+
+    connection.xmpp.connection.sendIQ(
+        $iq({ type: 'get',
+            to: connection.xmpp.connection.domain })
+            .c('token', { xmlns: 'urn:xmpp:token:gen:1' }),
+        res => {
+            const jwtData = {
+                jwt: $(res).find('>token')
+                    .first()
+                    .attr('token'),
+                isGuest: false
+            };
+
+            saveLocalJWT(jwtData);
+
+            APP.store.dispatch(setJWT(jwtData.jwt));
+        },
+        err => {
+            console.error(err);
+        }
+    );
+
+    return result;
+}
 
 /**
  * Middleware to parse token data upon setting a new room URL.
@@ -38,6 +89,10 @@ MiddlewareRegistry.register(store => next => action => {
 
     case SET_JWT:
         return _setJWT(store, next, action);
+
+    case CONNECTION_ESTABLISHED: {
+        return _checkJWT(store, next, action);
+    }
     }
 
     return next(action);

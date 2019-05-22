@@ -33,9 +33,14 @@ ReducerRegistry.register(STORE_NAME, (state = {}, action) => {
 
     case SET_WELCOME_PAGE_LISTS_DEFAULT_PAGE:
         return set(state, 'defaultPage', action.pageIndex);
-    case SET_JWT:
-    case 'DONE_JWT':
-        return set(state, 'loading', false);
+
+    case SET_JWT: {
+        const { jwt } = action;
+
+        if (jwt) {
+            return set(state, 'loading', false);
+        }
+    }
     }
 
     return state;
