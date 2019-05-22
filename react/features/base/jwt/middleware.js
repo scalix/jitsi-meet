@@ -1,4 +1,5 @@
 // @flow
+/* global window */
 
 import jwtDecode from 'jwt-decode';
 
@@ -12,7 +13,8 @@ import { MiddlewareRegistry } from '../redux';
 
 import { setJWT } from './actions';
 import { SET_JWT } from './actionTypes';
-import { parseJWTFromURLParams } from './functions';
+import { parseJWTFromURLParams, getLocalJWT, saveLocalJWT } from './functions';
+import { updateSettings } from '../settings';
 
 declare var APP: Object;
 
@@ -32,7 +34,7 @@ MiddlewareRegistry.register(store => next => action => {
         // which depends on the states of the features base/config and jwt. So
         // the JSON Web Token comes from the conference/room's URL and isGuest
         // needs a recalculation upon SET_CONFIG as well.
-        return _setConfigOrLocationURL(store, next, action);
+        return _setConfigOrLocationURL(store, next, action, getLocalJWT());
 
     case SET_JWT:
         return _setJWT(store, next, action);
@@ -92,17 +94,31 @@ function _overwriteLocalParticipant(
  * @param {Action} action - The redux action {@code SET_CONFIG} or
  * {@code SET_LOCATION_URL} which is being dispatched in the specified
  * {@code store}.
+ * @param {Object} jwtFeature - Local saved jwt feature state.
  * @private
  * @returns {Object} The new state that is the result of the reduction of the
  * specified {@code action}.
  */
-function _setConfigOrLocationURL({ dispatch, getState }, next, action) {
+function _setConfigOrLocationURL({ dispatch, getState }, next, action, jwtFeature) {
     const result = next(action);
 
     const { locationURL } = getState()['features/base/connection'];
 
-    dispatch(
-        setJWT(locationURL ? parseJWTFromURLParams(locationURL) : undefined));
+    if (locationURL) {
+        const jwt = parseJWTFromURLParams(locationURL);
+
+        if (jwt) {
+            dispatch(setJWT(jwt));
+            saveLocalJWT({
+                jwt,
+                isGuest: false
+            });
+        }
+    }
+
+    if (jwtFeature) {
+        dispatch(setJWT(jwtFeature.jwt));
+    }
 
     return result;
 }
@@ -151,7 +167,10 @@ function _setJWT(store, next, action) {
                     user && _overwriteLocalParticipant(
                         store, { ...user,
                             features: context.features });
+
+                    store.dispatch(updateSettings(context.user));
                 }
+
             }
         } else if (typeof APP === 'undefined') {
             // The logic of restoring JWT overrides make sense only on mobile.

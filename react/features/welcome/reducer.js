@@ -7,6 +7,7 @@ import {
     SET_SIDEBAR_VISIBLE,
     SET_WELCOME_PAGE_LISTS_DEFAULT_PAGE
 } from './actionTypes';
+import { SET_JWT } from '../base/jwt';
 
 /**
  * The name of the redux store/state property which is the root of the redux
@@ -18,7 +19,8 @@ const STORE_NAME = 'features/welcome';
  * Sets up the persistence of the feature {@code welcome}.
  */
 PersistenceRegistry.register(STORE_NAME, {
-    defaultPage: true
+    defaultPage: true,
+    loading: true
 });
 
 /**
@@ -31,6 +33,9 @@ ReducerRegistry.register(STORE_NAME, (state = {}, action) => {
 
     case SET_WELCOME_PAGE_LISTS_DEFAULT_PAGE:
         return set(state, 'defaultPage', action.pageIndex);
+    case SET_JWT:
+    case 'DONE_JWT':
+        return set(state, 'loading', false);
     }
 
     return state;

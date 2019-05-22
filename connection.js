@@ -73,14 +73,14 @@ function checkForAttachParametersAndConnect(id, password, connection) {
  */
 function connect(id, password, roomName) {
     const connectionConfig = Object.assign({}, config);
-    const { issuer, jwt } = APP.store.getState()['features/base/jwt'];
+    const { jwt } = APP.store.getState()['features/base/jwt'];
 
     connectionConfig.bosh += `?room=${roomName}`;
 
     const connection
         = new JitsiMeetJS.JitsiConnection(
             null,
-            jwt && issuer && issuer !== 'anonymous' ? jwt : undefined,
+            jwt,
             connectionConfig);
 
     return new Promise((resolve, reject) => {

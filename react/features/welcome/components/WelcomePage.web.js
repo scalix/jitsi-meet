@@ -1,4 +1,4 @@
-/* global interfaceConfig, APP*/
+/* global interfaceConfig, APP */
 
 import React from 'react';
 
@@ -14,7 +14,9 @@ import {
     _mapStateToProps as _abstractMapStateToProps
 } from './AbstractWelcomePage';
 
+
 import Tabs from './Tabs';
+import { getLocalParticipant, getParticipantDisplayName } from '../../base/participants';
 
 
 /**
@@ -91,17 +93,9 @@ class WelcomePage extends AbstractWelcomePage {
             retry: true
         }).then(con => {
             APP.connection = con;
-            this.setState({ loading: false });
-            if (this.state.generateRoomnames) {
-                this._updateRoomname();
-            }
-
-            if (this._shouldShowAdditionalContent()) {
-                this._additionalContentRef.appendChild(
-                    this._additionalContentTemplate.content.cloneNode(true));
-            }
         })
         .catch(err => {
+            APP.UI.notifyInternalError(err);
             console.error(err);
         });
     }
@@ -131,19 +125,25 @@ class WelcomePage extends AbstractWelcomePage {
      */
     render() {
 
-        const { t } = this.props;
+        const { t, loading } = this.props;
         const showAdditionalContent = this._shouldShowAdditionalContent();
 
-        console.log(this.state);
-
-        // alert(this.state.isLoading);
-        if (this.state.loading) {
+        if (loading) {
             return (
                 <img
                     height = '100%'
                     src = './images/index.futuristic-game-interface-preloader.svg'
                     width = '100%' />
             );
+        } else if (!this.state.updateTimeoutId) {
+            if (this.state.generateRoomnames) {
+                this._updateRoomname();
+            }
+
+            if (this._shouldShowAdditionalContent()) {
+                this._additionalContentRef.appendChild(
+                    this._additionalContentTemplate.content.cloneNode(true));
+            }
         }
 
         return (
@@ -309,8 +309,12 @@ class WelcomePage extends AbstractWelcomePage {
  * }}
  */
 function _mapStateToProps(state) {
+    const localParticipant = getLocalParticipant(state);
+
     return {
-        ..._abstractMapStateToProps(state)
+        ..._abstractMapStateToProps(state),
+        _displayName: getParticipantDisplayName(state, localParticipant.id),
+        loading: state['features/welcome'].loading
     };
 }
 
