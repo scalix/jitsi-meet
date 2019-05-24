@@ -1,5 +1,5 @@
 // @flow
-/* global window, $ */
+/* global window */
 
 import jwtDecode from 'jwt-decode';
 
@@ -16,7 +16,6 @@ import { SET_JWT } from './actionTypes';
 import { parseJWTFromURLParams, getLocalJWT, saveLocalJWT } from './functions';
 import { updateSettings } from '../settings';
 
-import { $iq } from 'strophe.js';
 
 declare var APP: Object;
 
@@ -35,36 +34,31 @@ declare var APP: Object;
  */
 function _checkJWT({ dispatch, getState }, next, action) {
     const result = next(action) || getState()['\'features/base/jwt\''];
-    const token = getLocalJWT();
+    const jwtFeature = getLocalJWT();
 
-    if (token) {
-        dispatch(setJWT(token.jwt));
+    if (jwtFeature && jwtFeature.jwt) {
+        dispatch(setJWT(jwtFeature.jwt));
 
         return result;
     }
 
     const { connection } = action;
 
-    connection.xmpp.connection.sendIQ(
-        $iq({ type: 'get',
-            to: connection.xmpp.connection.domain })
-            .c('token', { xmlns: 'urn:xmpp:token:gen:1' }),
-        res => {
+    connection
+        .generateToken()
+        .then(tokens => {
+
             const jwtData = {
-                jwt: $(res).find('>token')
-                    .first()
-                    .attr('token'),
+                jwt: tokens[0].token,
                 isGuest: false
             };
 
+            connection.setToken(jwtData.jwt);
             saveLocalJWT(jwtData);
-
             APP.store.dispatch(setJWT(jwtData.jwt));
-        },
-        err => {
-            console.error(err);
-        }
-    );
+        })
+        .catch(err => console.log(err));
+
 
     return result;
 }
