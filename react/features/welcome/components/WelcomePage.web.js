@@ -32,7 +32,8 @@ class WelcomePage extends AbstractWelcomePage {
      */
     static defaultProps = {
         _room: '',
-        loading: true
+        loading: true,
+        reload: false
     };
 
     /**
@@ -89,18 +90,30 @@ class WelcomePage extends AbstractWelcomePage {
      */
     componentDidMount() {
         document.body.classList.add('welcome-page');
+        this._initConnection();
+    }
 
+    /**
+     * Initialize connection.
+     *
+     * @returns {void}
+     * @private
+     */
+    _initConnection() {
         openConnection({
             retry: true
         }).then(con => {
             APP.connection = con;
+            this.setState({ reload: false });
         })
-        .catch(err => {
-            APP.UI.notifyInternalError(err);
-            console.error(err);
-        });
+            .catch(err => {
+                if (APP.connection) {
+                    APP.connection.diconnect();
+                }
+                APP.UI.notifyInternalError(err);
+                console.error(err);
+            });
     }
-
 
     /**
      * Removes the classname used for custom styling of the welcome page.
@@ -126,11 +139,17 @@ class WelcomePage extends AbstractWelcomePage {
      */
     render() {
 
-        const { t, loading, _displayName } = this.props;
+        const { t, _displayName, reload } = this.props;
+        let { loading } = this.props;
         const showAdditionalContent = this._shouldShowAdditionalContent();
         const { APP_NAME } = interfaceConfig;
 
-        if (loading) {
+        if (reload) {
+            this._onReset();
+            loading = true;
+        }
+
+        if (loading || !APP.connection) {
             return (
                 <img
                     height = '100%'
@@ -216,7 +235,9 @@ class WelcomePage extends AbstractWelcomePage {
      * @returns {void}
      */
     _onReset(event) {
-        event.preventDefault();
+        if (event) {
+            event.preventDefault();
+        }
         window.localStorage.clear();
         window.location.reload();
     }
@@ -339,7 +360,8 @@ function _mapStateToProps(state) {
     return {
         ..._abstractMapStateToProps(state),
         _displayName: getParticipantDisplayName(state, localParticipant.id),
-        loading: state['features/welcome'].loading
+        loading: state['features/welcome'].loading,
+        reload: state['features/welcome'].reload
     };
 }
 

@@ -44,3 +44,13 @@ export function saveLocalJWT(jwtData: Object) {
         JSON.stringify(jwtData)
     );
 }
+
+
+/**
+ * Dump jwt feature to local storage.
+ *
+ * @returns {void}
+ */
+export function deleteSavedJWT() {
+    window.localStorage.removeItem('features/base/jwt');
+}

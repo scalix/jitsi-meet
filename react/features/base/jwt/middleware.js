@@ -4,7 +4,7 @@
 import jwtDecode from 'jwt-decode';
 
 import { SET_CONFIG } from '../config';
-import { CONNECTION_ESTABLISHED, SET_LOCATION_URL } from '../connection';
+import { CONNECTION_ESTABLISHED, CONNECTION_FAILED, SET_LOCATION_URL } from '../connection';
 import {
     getLocalParticipant,
     participantUpdated
@@ -12,8 +12,8 @@ import {
 import { MiddlewareRegistry } from '../redux';
 
 import { setJWT } from './actions';
-import { SET_JWT } from './actionTypes';
-import { parseJWTFromURLParams, getLocalJWT, saveLocalJWT } from './functions';
+import { SET_JWT, JWT_EXPIRED } from './actionTypes';
+import { parseJWTFromURLParams, getLocalJWT, saveLocalJWT, deleteSavedJWT } from './functions';
 import { updateSettings } from '../settings';
 
 
@@ -33,7 +33,7 @@ declare var APP: Object;
  * @returns {void}
  */
 function _checkJWT({ dispatch, getState }, next, action) {
-    const result = next(action) || getState()['\'features/base/jwt\''];
+    const result = next(action) || getState()['features/base/jwt'];
     const jwtFeature = getLocalJWT();
 
     if (jwtFeature && jwtFeature.jwt) {
@@ -86,6 +86,21 @@ MiddlewareRegistry.register(store => next => action => {
 
     case CONNECTION_ESTABLISHED: {
         return _checkJWT(store, next, action);
+    }
+
+    case CONNECTION_FAILED: {
+        const { connection, error } = action;
+        const jwtFeature = getLocalJWT();
+
+        if (error.name === 'connection.passwordRequired' && jwtFeature && jwtFeature.jwt) {
+            connection.setToken(null);
+            deleteSavedJWT();
+            store.dispatch({
+                type: JWT_EXPIRED,
+                error
+            });
+        }
+        break;
     }
     }
 

@@ -7,7 +7,7 @@ import {
     SET_SIDEBAR_VISIBLE,
     SET_WELCOME_PAGE_LISTS_DEFAULT_PAGE
 } from './actionTypes';
-import { SET_JWT } from '../base/jwt';
+import { SET_JWT, JWT_EXPIRED } from '../base/jwt';
 
 /**
  * The name of the redux store/state property which is the root of the redux
@@ -40,6 +40,11 @@ ReducerRegistry.register(STORE_NAME, (state = {}, action) => {
         if (jwt) {
             return set(state, 'loading', false);
         }
+        break;
+    }
+
+    case JWT_EXPIRED: {
+        return set(state, 'reload', true);
     }
     }
 
