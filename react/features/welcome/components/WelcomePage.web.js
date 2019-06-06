@@ -1,4 +1,4 @@
-/* global interfaceConfig, APP */
+/* global interfaceConfig, APP, config */
 
 import React from 'react';
 
@@ -17,6 +17,7 @@ import {
 
 import Tabs from './Tabs';
 import { getLocalParticipant, getParticipantDisplayName } from '../../base/participants';
+import { appNavigate } from '../../app';
 
 
 /**
@@ -33,7 +34,8 @@ class WelcomePage extends AbstractWelcomePage {
     static defaultProps = {
         _room: '',
         loading: true,
-        reload: false
+        reload: false,
+        voiceOnly: false
     };
 
     /**
@@ -51,7 +53,8 @@ class WelcomePage extends AbstractWelcomePage {
             generateRoomnames:
                 interfaceConfig.GENERATE_ROOMNAMES_ON_WELCOME_PAGE,
             selectedTab: 0,
-            loading: true
+            loading: true,
+            voiceOnly: false
         };
 
 
@@ -79,6 +82,7 @@ class WelcomePage extends AbstractWelcomePage {
         this._onRoomChange = this._onRoomChange.bind(this);
         this._setAdditionalContentRef = this._setAdditionalContentRef.bind(this);
         this._onTabSelected = this._onTabSelected.bind(this);
+        this._onVoiceOnlyChanged = this._onVoiceOnlyChanged.bind(this);
     }
 
     /**
@@ -208,11 +212,23 @@ class WelcomePage extends AbstractWelcomePage {
                                     type = 'text'
                                     value = { this.state.room } />
                             </form>
+                            <div id = 'room_config'>
+                                <label
+                                    onClick = { this._onVoiceOnlyChanged } >
+                                    <input
+                                        checked = { this.state.voiceOnly }
+                                        id = 'voice_only'
+                                        name = 'voice_only'
+                                        onChange = { this._onVoiceOnlyChanged }
+                                        type = 'checkbox' />
+                                        Voice Only
+                                </label>
+                            </div>
                         </div>
                         <div
                             className = 'welcome-page-button'
                             id = 'enter_room_button'
-                            onClick = { this._onJoin }>
+                            onClick = { this._onFormSubmit }>
                             { t('welcomepage.go') }
                         </div>
                     </div>
@@ -243,6 +259,22 @@ class WelcomePage extends AbstractWelcomePage {
     }
 
     /**
+     * Controls new conference to be voice only or not.
+     *
+     * @param {Event} e - The HTML Event which details the form submission.
+     * @private
+     * @returns {void}
+     */
+    _onVoiceOnlyChanged(e) {
+
+        const checkbox = e.target.querySelector('#voice_only') || e.target;
+
+        this.setState({
+            voiceOnly: checkbox.checked
+        });
+    }
+
+    /**
      * Prevents submission of the form and delegates join logic.
      *
      * @param {Event} event - The HTML Event which details the form submission.
@@ -252,7 +284,25 @@ class WelcomePage extends AbstractWelcomePage {
     _onFormSubmit(event) {
         event.preventDefault();
 
-        this._onJoin();
+        config.startAudioOnly = true;
+
+        let room = this.state.room || this.state.generatedRoomname;
+
+        if (this.state.voiceOnly) {
+            room = `${room}#config.startAudioOnly=true`;
+        }
+
+        if (room) {
+            this.setState({ joining: true });
+
+            // By the time the Promise of appNavigate settles, this component
+            // may have already been unmounted.
+            const onAppNavigateSettled
+                = () => this._mounted && this.setState({ joining: false });
+
+            this.props.dispatch(appNavigate(room))
+                .then(onAppNavigateSettled, onAppNavigateSettled);
+        }
     }
 
     /**

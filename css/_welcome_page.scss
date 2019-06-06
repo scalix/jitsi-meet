@@ -64,9 +64,25 @@ body.welcome-page {
                 text-align: left;
                 color: #253858;
                 height: fit-content;
-                border-width: 0px 0px 2px 0px;
-                border-style: solid;
-                border-image: linear-gradient(to right, #dee1e6, #fff) 1;
+
+                form {
+                    border-width: 0px 0px 2px 0px;
+                    border-style: solid;
+                    border-image: linear-gradient(to right, #dee1e6, #fff) 1;
+                }
+
+                #room_config {
+                    margin: 10px 0 0 0;
+
+                    label {
+                        cursor: pointer;
+
+                        input {
+                            vertical-align: middle;
+                            margin: 0 10px 0 0;
+                        }
+                    }
+                }
 
                 .enter-room-title {
                     font-size: 18px;

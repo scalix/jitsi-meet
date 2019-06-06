@@ -103,9 +103,9 @@ function initCommands() {
 
             APP.store.dispatch(toggleTileView());
         },
-        'video-hangup': () => {
+        'video-hangup': (showFeedbackDialog = true) => {
             sendAnalytics(createApiEvent('video.hangup'));
-            APP.conference.hangup(true);
+            APP.conference.hangup(showFeedbackDialog);
         },
         'email': email => {
             sendAnalytics(createApiEvent('email.changed'));
@@ -556,6 +556,38 @@ class API {
         this._sendEvent({
             name: 'on-stage-participant-changed',
             id
+        });
+    }
+
+    /**
+     * Notify external application of an unexpected camera-related error having
+     * occurred.
+     *
+     * @param {string} type - The type of the camera error.
+     * @param {string} message - Additional information about the error.
+     * @returns {void}
+     */
+    notifyOnCameraError(type: string, message: string) {
+        this._sendEvent({
+            name: 'camera-error',
+            type,
+            message
+        });
+    }
+
+    /**
+     * Notify external application of an unexpected mic-related error having
+     * occurred.
+     *
+     * @param {string} type - The type of the mic error.
+     * @param {string} message - Additional information about the error.
+     * @returns {void}
+     */
+    notifyOnMicError(type: string, message: string) {
+        this._sendEvent({
+            name: 'mic-error',
+            type,
+            message
         });
     }
 
