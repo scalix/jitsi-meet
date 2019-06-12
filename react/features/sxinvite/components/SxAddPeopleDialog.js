@@ -1,34 +1,28 @@
 // @flow
 
-import Avatar from '@atlaskit/avatar';
+import _ from 'lodash';
 import InlineMessage from '@atlaskit/inline-message';
 import React, { Component } from 'react';
 import type { Dispatch } from 'redux';
 
 import { createInviteDialogEvent, sendAnalytics } from '../../analytics';
 import { Dialog, hideDialog } from '../../base/dialog';
-import { translate, translateToHTML } from '../../base/i18n';
-import { MultiSelectAutocomplete } from '../../base/react';
+import { translate } from '../../base/i18n';
+
 import { connect } from '../../base/redux';
 
 import {
-    type Props as AbstractProps,
-    type State,
     _mapStateToProps as _abstractMapStateToProps
 } from '../../invite/components/add-people-dialog/AbstractAddPeopleDialog';
+import { FieldTextStateless } from '@atlaskit/field-text';
 
 declare var interfaceConfig: Object;
+declare var APP: Object;
 
 /**
  * The type of the React {@code Component} props of {@link AddPeopleDialog}.
  */
-type Props = AbstractProps & {
-
-    /**
-     * The {@link JitsiMeetConference} which will be used to invite "room"
-     * participants through the SIP Jibri (Video SIP gateway).
-     */
-    _conference: Object,
+type Props = {
 
     /**
      * The redux {@code dispatch} function.
@@ -41,19 +35,48 @@ type Props = AbstractProps & {
     t: Function,
 };
 
+export type State = {
+
+    /**
+     * Indicating that an error occurred when adding people to the call.
+     */
+    addToCallError: boolean,
+
+    /**
+     * Indicating that we're currently adding the new people to the
+     * call.
+     */
+    addToCallInProgress: boolean,
+
+    /**
+     * Error message if set.
+     */
+    addToCallErrorMessage: string,
+
+    /**
+     * Display name of invitee.
+     */
+    displayName: null,
+
+
+    /**
+     * Email of invitee.
+     */
+    email: null
+}
+
 /**
  * The dialog that allows to invite people to the call.
  */
-class AddPeopleDialog extends Component<Props, State> {
-    _multiselect = null;
-
-    _resourceClient: Object;
+class SxAddPeopleDialog extends Component<Props, State> {
 
     state = {
         addToCallError: false,
+        addToCallErrorMessage: '',
         addToCallInProgress: false,
-        inviteItems: []
-    };
+        displayName: null,
+        email: null
+    }
 
     /**
      * Initializes a new {@code AddPeopleDialog} instance.
@@ -65,16 +88,9 @@ class AddPeopleDialog extends Component<Props, State> {
         super(props);
 
         // Bind event handlers so they are only bound once per instance.
-        this._onItemSelected = this._onItemSelected.bind(this);
-        this._onSelectionChange = this._onSelectionChange.bind(this);
         this._onSubmit = this._onSubmit.bind(this);
-        this._parseQueryResults = this._parseQueryResults.bind(this);
-        this._setMultiSelectElement = this._setMultiSelectElement.bind(this);
+        this._canGenerateToken = this._canGenerateToken.bind(this);
 
-        this._resourceClient = {
-            makeQuery: this._query,
-            parseResults: this._parseQueryResults
-        };
     }
 
     /**
@@ -105,79 +121,85 @@ class AddPeopleDialog extends Component<Props, State> {
      * @returns {ReactElement}
      */
     render() {
-        const {
-            t
-        } = this.props;
-
-        const placeholder = 'addPeople.add';
-        const loadingMessage = 'addPeople.loading';
-        const noMatches = 'addPeople.noResults';
-
-        const footerText = {
-            content: <div className = 'footer-text-wrap'>
-                { translateToHTML(t, 'addPeople.footerText') }
-            </div>
-        };
 
         return (
             <Dialog
-                okDisabled = { false }
+                okDisabled = { this._canGenerateToken() === false }
                 okKey = 'addPeople.add'
                 onSubmit = { this._onSubmit }
                 titleKey = 'addPeople.title'
                 width = 'medium'>
                 <div className = 'add-people-form-wrap'>
                     { this._renderErrorMessage() }
-                    <MultiSelectAutocomplete
-                        footer = { footerText }
-                        isDisabled = { false }
-                        loadingMessage = { t(loadingMessage) }
-                        noMatchesFound = { t(noMatches) }
-                        onItemSelected = { this._onItemSelected }
-                        onSelectionChange = { this._onSelectionChange }
-                        placeholder = { t(placeholder) }
-                        ref = { this._setMultiSelectElement }
-                        resourceClient = { this._resourceClient }
-                        shouldFitContainer = { true }
-                        shouldFocus = { true } />
+                    { this._renderInvitee() }
                 </div>
             </Dialog>
         );
     }
 
-    _invite: Array<Object> => Promise<*>
-
-    _isAddDisabled: () => boolean;
-
-    _onItemSelected: (Object) => Object;
-
     /**
-     * Callback invoked when a selection has been made but before it has been
-     * set as selected.
+     * Renders the error message if the add doesn't succeed.
      *
-     * @param {Object} item - The item that has just been selected.
      * @private
-     * @returns {Object} The item to display as selected in the input.
+     * @returns {ReactElement|null}
      */
-    _onItemSelected(item) {
-        return item;
+    _renderInvitee() {
+        const { t } = this.props;
+        const { displayName, email } = this.state;
+
+        return (
+            <div className = 'sx-invite-edit profile-edit'>
+                <div className = 'sx-invite-edit-field profile-edit-field' >
+                    <FieldTextStateless
+                        autoFocus = { true }
+                        compact = { true }
+                        id = 'setDisplayName'
+                        label = { t('profile.setDisplayNameLabel') }
+                        // eslint-disable-next-line react/jsx-no-bind
+                        onChange = {
+                            ({ target: { value } }) =>
+                                this.setState({ displayName: value })
+                        }
+                        placeholder = { t('settings.name') }
+                        shouldFitContainer = { true }
+                        type = 'text'
+                        value = { displayName } />
+                </div>
+                <div className = 'sx-invite-edit-field profile-edit-field'>
+                    <FieldTextStateless
+                        compact = { true }
+                        id = 'setEmail'
+                        label = { t('profile.setEmailLabel') }
+                        // eslint-disable-next-line react/jsx-no-bind
+                        onChange = {
+                            ({ target: { value } }) =>
+                                this.setState({ email: value })
+                        }
+                        placeholder = { t('profile.setEmailInput') }
+                        shouldFitContainer = { true }
+                        type = 'text'
+                        value = { email } />
+                </div>
+            </div>
+        );
     }
 
-    _onSelectionChange: (Map<*, *>) => void;
+    _canGenerateToken: () => void;
 
     /**
-     * Handles a selection change.
+     * Submits the selection for inviting.
      *
-     * @param {Map} selectedItems - The list of selected items.
      * @private
      * @returns {void}
      */
-    _onSelectionChange(selectedItems) {
-        console.log(selectedItems);
+    _canGenerateToken() {
+        if (!APP.connection && (APP.conference && _.isEmpty(APP.conference.roomName))) {
+            return false;
+        }
 
-        this.setState({
-            inviteItems: selectedItems
-        });
+        const { displayName, email } = this.state;
+
+        return !_.isEmpty(displayName) && !_.isEmpty(email);
     }
 
     _onSubmit: () => void;
@@ -189,65 +211,36 @@ class AddPeopleDialog extends Component<Props, State> {
      * @returns {void}
      */
     _onSubmit() {
-        const { inviteItems } = this.state;
-        const invitees = inviteItems.map(({ item }) => item);
+        const { displayName, email } = this.state;
 
-        console.log(invitees);
-
-        this._invite(invitees)
-            .then(invitesLeftToSend => {
-                if (invitesLeftToSend.length) {
-                    const unsentInviteIDs
-                        = invitesLeftToSend.map(invitee =>
-                            invitee.id || invitee.number);
-                    const itemsToSelect
-                        = inviteItems.filter(({ item }) =>
-                            unsentInviteIDs.includes(item.id || item.number));
-
-                    if (this._multiselect) {
-                        this._multiselect.setSelectedItems(itemsToSelect);
-                    }
-                } else {
-                    this.props.dispatch(hideDialog());
-                }
+        if (!this._canGenerateToken()) {
+            this.setState({
+                addToCallError: true,
+                addToCallErrorMessage: 'Some fields are empty or broken connection.'
             });
+
+            return;
+        }
+        this.setState({ addToCallError: false });
+
+        APP.connection.generateToken([ {
+            username: displayName,
+            email,
+            room: APP.conference.roomName
+        } ]).then(tokens => {
+            console.log(tokens[0]);
+            this.props.dispatch(hideDialog());
+        })
+            .catch(err => {
+                console.log(err);
+                this.setState({
+                    addToCallError: true,
+                    addToCallErrorMessage: 'Some fields are empty or broken connection.'
+                });
+            });
+
     }
 
-    _parseQueryResults: (?Array<Object>) => Array<Object>;
-
-    /**
-     * Processes results from requesting available numbers and people by munging
-     * each result into a format {@code MultiSelectAutocomplete} can use for
-     * display.
-     *
-     * @param {Array} response - The response object from the server for the
-     * query.
-     * @private
-     * @returns {Object[]} Configuration objects for items to display in the
-     * search autocomplete.
-     */
-    _parseQueryResults(response = []) {
-        const users = response.filter(item => item.type !== 'phone');
-        const userDisplayItems = users.map(user => {
-            return {
-                content: user.name,
-                elemBefore: <Avatar
-                    size = 'small'
-                    src = { user.avatar } />,
-                item: user,
-                tag: {
-                    elemBefore: <Avatar
-                        size = 'xsmall'
-                        src = { user.avatar } />
-                },
-                value: user.id
-            };
-        });
-
-        return userDisplayItems;
-    }
-
-    _query: (string) => Promise<Array<Object>>;
 
     /**
      * Renders the error message if the add doesn't succeed.
@@ -292,38 +285,27 @@ class AddPeopleDialog extends Component<Props, State> {
         );
     }
 
-    _setMultiSelectElement: (React$ElementRef<*> | null) => mixed;
-
-    /**
-     * Sets the instance variable for the multi select component
-     * element so it can be accessed directly.
-     *
-     * @param {Object} element - The DOM element for the component's dialog.
-     * @private
-     * @returns {void}
-     */
-    _setMultiSelectElement(element) {
-        this._multiselect = element;
-    }
 }
 
 /**
  * Maps (parts of) the Redux state to the associated
- * {@code AddPeopleDialog}'s props.
+ * {@code SxAddPeopleDialog}'s props.
  *
  * @param {Object} state - The Redux state.
  * @private
  * @returns {{
- *     _dialOutAuthUrl: string,
- *     _jwt: string,
- *     _peopleSearchQueryTypes: Array<string>,
- *     _peopleSearchUrl: string
+ *     displayName: string,
+ *     addToCallErrorMessage: string,
+ *     email: Array<string>,
  * }}
  */
 function _mapStateToProps(state) {
     return {
+        displayName: null,
+        email: null,
+        addToCallErrorMessage: '',
         ..._abstractMapStateToProps(state)
     };
 }
 
-export default translate(connect(_mapStateToProps)(AddPeopleDialog));
+export default translate(connect(_mapStateToProps)(SxAddPeopleDialog));

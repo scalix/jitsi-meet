@@ -4,6 +4,17 @@
 .modal-dialog-form {
     .add-people-form-wrap {
 
+        .sx-invite-edit {
+            display: inline-flex;
+            width: 100%;
+
+            .sx-invite-edit-field {
+                width: 40%;
+                margin: 0px 2%;
+            }
+
+        }
+
         .error {
             padding-left: 5px;
 
