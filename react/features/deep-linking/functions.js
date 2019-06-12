@@ -80,7 +80,7 @@ export function getDeepLinkingPage(state) {
         return Promise.resolve();
     }
 
-    return _openDesktopApp().then(
+    return _openDesktopApp(state).then(
         // eslint-disable-next-line no-confusing-arrow
         result => result ? DeepLinkingDesktopPage : undefined);
 }
@@ -88,9 +88,10 @@ export function getDeepLinkingPage(state) {
 /**
  * Opens the desktop app.
  *
+ * @param {Object} state - Object containing current redux state.
  * @returns {Promise<boolean>} - Resolves with true if the attempt to open the desktop app was successful and resolves
  * with false otherwise.
  */
-export function openDesktopApp() {
-    return _openDesktopApp();
+export function openDesktopApp(state) {
+    return _openDesktopApp(state);
 }
