@@ -64,6 +64,7 @@ import VideoMuteButton from '../VideoMuteButton';
 import {
     ClosedCaptionButton
 } from '../../../subtitles';
+import { beginAddPeopleSx } from '../../../sxinvite/';
 
 /**
  * The type of the React {@code Component} props of {@link Toolbox}.
@@ -224,6 +225,7 @@ class Toolbox extends Component<Props, State> {
         this._onToolbarOpenFeedback
             = this._onToolbarOpenFeedback.bind(this);
         this._onToolbarOpenInvite = this._onToolbarOpenInvite.bind(this);
+        this._onToolbarOpenSxInvite = this._onToolbarOpenSxInvite.bind(this);
         this._onToolbarOpenKeyboardShortcuts
             = this._onToolbarOpenKeyboardShortcuts.bind(this);
         this._onToolbarOpenSpeakerStats
@@ -623,6 +625,20 @@ class Toolbox extends Component<Props, State> {
         sendAnalytics(createToolbarEvent('feedback'));
 
         this._doOpenFeedback();
+    }
+
+    _onToolbarOpenSxInvite: () => void;
+
+    /**
+     * Creates an analytics toolbar event and dispatches an action for opening
+     * the modal for inviting people directly into the conference.
+     *
+     * @private
+     * @returns {void}
+     */
+    _onToolbarOpenSxInvite() {
+        sendAnalytics(createToolbarEvent('sxinvite'));
+        this.props.dispatch(beginAddPeopleSx());
     }
 
     _onToolbarOpenInvite: () => void;
@@ -1064,6 +1080,16 @@ class Toolbox extends Component<Props, State> {
                         onClick = { this._onToolbarOpenInvite }
                         text = { t('toolbar.invite') } />
                 );
+            case 'sxinvite':
+                return (
+                    <OverflowMenuItem
+                        accessibilityLabel =
+                            { t('toolbar.accessibilityLabel.invite') }
+                        icon = 'icon-invite'
+                        key = 'invite'
+                        onClick = { this._onToolbarOpenSxInvite }
+                        text = { t('toolbar.invite') } />
+                );
             case 'tileview':
                 return <TileViewButton showLabel = { true } />;
             case 'localrecording':
@@ -1135,6 +1161,9 @@ class Toolbox extends Component<Props, State> {
         }
         if (this._shouldShowButton('invite') && !_hideInviteButton) {
             buttonsRight.push('invite');
+        }
+        if (this._shouldShowButton('sxinvite')) {
+            buttonsRight.push('sxinvite');
         }
         if (this._shouldShowButton('tileview')) {
             buttonsRight.push('tileview');
@@ -1229,9 +1258,16 @@ class Toolbox extends Component<Props, State> {
                         && <ToolbarButton
                             accessibilityLabel =
                                 { t('toolbar.accessibilityLabel.invite') }
-                            iconName = 'icon-invite'
+                            iconName = 'icon-public'
                             onClick = { this._onToolbarOpenInvite }
                             tooltip = { t('toolbar.invite') } /> }
+                    { buttonsRight.indexOf('sxinvite') !== -1
+                    && <ToolbarButton
+                        accessibilityLabel =
+                            { t('toolbar.accessibilityLabel.invite') }
+                        iconName = 'icon-public'
+                        onClick = { this._onToolbarOpenSxInvite }
+                        tooltip = { t('toolbar.invite') } /> }
                     {
                         buttonsRight.indexOf('info') !== -1
                             && <InfoDialogButton />
