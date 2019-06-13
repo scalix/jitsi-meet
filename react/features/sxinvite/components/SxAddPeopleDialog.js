@@ -6,15 +6,13 @@ import React, { Component } from 'react';
 import type { Dispatch } from 'redux';
 
 import { createInviteDialogEvent, sendAnalytics } from '../../analytics';
-import { Dialog, hideDialog } from '../../base/dialog';
+import { Dialog } from '../../base/dialog';
 import { translate } from '../../base/i18n';
 
 import { connect } from '../../base/redux';
 
-import {
-    _mapStateToProps as _abstractMapStateToProps
-} from '../../invite/components/add-people-dialog/AbstractAddPeopleDialog';
 import { FieldTextStateless } from '@atlaskit/field-text';
+import { getInviteURL } from '../../base/connection';
 
 declare var interfaceConfig: Object;
 declare var APP: Object;
@@ -23,6 +21,7 @@ declare var APP: Object;
  * The type of the React {@code Component} props of {@link AddPeopleDialog}.
  */
 type Props = {
+
 
     /**
      * The redux {@code dispatch} function.
@@ -33,6 +32,22 @@ type Props = {
      * Invoked to obtain translated strings.
      */
     t: Function,
+
+    /**
+     * Conference password.
+     */
+    conferencePassword: string,
+
+    /**
+     * Conference name.
+     */
+    conferenceName: string,
+
+    /**
+     * Url for current conference.
+     */
+    inviteURL: string
+
 };
 
 export type State = {
@@ -56,13 +71,18 @@ export type State = {
     /**
      * Display name of invitee.
      */
-    displayName: null,
+    displayName: string,
 
 
     /**
      * Email of invitee.
      */
-    email: null
+    email: string,
+
+    /**
+     * Invitee jwt token.
+     */
+    inviteeJWT: string
 }
 
 /**
@@ -74,9 +94,12 @@ class SxAddPeopleDialog extends Component<Props, State> {
         addToCallError: false,
         addToCallErrorMessage: '',
         addToCallInProgress: false,
-        displayName: null,
-        email: null
+        displayName: '',
+        email: '',
+        inviteeJWT: ''
     }
+
+    _copyElement = null;
 
     /**
      * Initializes a new {@code AddPeopleDialog} instance.
@@ -87,9 +110,13 @@ class SxAddPeopleDialog extends Component<Props, State> {
     constructor(props: Props) {
         super(props);
 
+        this._copyElement = null;
+
         // Bind event handlers so they are only bound once per instance.
         this._onSubmit = this._onSubmit.bind(this);
         this._canGenerateToken = this._canGenerateToken.bind(this);
+        this._setCopyElement = this._setCopyElement.bind(this);
+        this._onCopyInviteURL = this._onCopyInviteURL.bind(this);
 
     }
 
@@ -121,6 +148,30 @@ class SxAddPeopleDialog extends Component<Props, State> {
      * @returns {ReactElement}
      */
     render() {
+        const { t } = this.props;
+        const { inviteeJWT } = this.state;
+
+        let link = '';
+
+        if (!_.isEmpty(inviteeJWT)) {
+            link = (<div className = 'info-dialog-conference-url'>
+                <span className = 'info-label'>
+                    { t('info.conferenceURL') }
+                </span>
+                <span className = 'spacer'>&nbsp;</span>
+                <span className = 'info-value'>
+                    <a
+                        className = 'info-dialog-url-text'
+                        href = { this._getDisplayUrl() }
+                        onClick = { this._onCopyInviteURL } >
+                        { this._getDisplayUrl() }
+                        <br />
+                        {t('dialog.copy')}
+                    </a>
+                </span>
+            </div>
+            );
+        }
 
         return (
             <Dialog
@@ -130,11 +181,80 @@ class SxAddPeopleDialog extends Component<Props, State> {
                 titleKey = 'addPeople.title'
                 width = 'medium'>
                 <div className = 'add-people-form-wrap'>
+                    { link }
                     { this._renderErrorMessage() }
                     { this._renderInvitee() }
+                    <textarea
+                        className = 'info-dialog-copy-element'
+                        readOnly = { true }
+                        ref = { this._setCopyElement }
+                        tabIndex = '-1'
+                        value = { this._getTextToCopy() } />
                 </div>
             </Dialog>
         );
+    }
+
+
+    /**
+     * Build valid url for invitation.
+     *
+     * @returns {string} URL.
+     * @private
+     */
+    _getDisplayUrl() {
+        const { inviteURL } = this.props;
+        const { inviteeJWT } = this.state;
+
+        return `${inviteURL}?jwt=${inviteeJWT}`;
+    }
+
+    _getTextToCopy: () => void;
+
+    /**
+     * Creates a message describing how to dial in to the conference.
+     *
+     * @private
+     * @returns {string}
+     */
+    _getTextToCopy() {
+        const { conferenceName, t } = this.props;
+
+        let invite = t('info.inviteURLFirstPartGeneral');
+        const moreInfo = t('info.inviteURLMoreInfo',
+            { conferenceID: conferenceName });
+
+        invite += t('info.inviteURLSecondPart', {
+            url: this._getDisplayUrl(),
+            moreInfo
+        });
+
+        return invite;
+    }
+
+    _onCopyInviteURL: (Object) => void;
+
+    /**
+     * Callback invoked to copy the contents of {@code this._copyElement} to the
+     * clipboard.
+     *
+     * @param {Event} event - Event.
+     * @private
+     * @returns {void}
+     */
+    _onCopyInviteURL(event) {
+        event.preventDefault();
+        try {
+            if (!this._copyElement) {
+                throw new Error('No element to copy from.');
+            }
+
+            this._copyElement && this._copyElement.select();
+            document.execCommand('copy');
+            this._copyElement && this._copyElement.blur();
+        } catch (err) {
+            console.log(err);
+        }
     }
 
     /**
@@ -180,8 +300,24 @@ class SxAddPeopleDialog extends Component<Props, State> {
                         type = 'text'
                         value = { email } />
                 </div>
+
             </div>
         );
+    }
+
+    _setCopyElement: () => void;
+
+    /**
+     * Sets the internal reference to the DOM/HTML element backing the React
+     * {@code Component} input.
+     *
+     * @param {HTMLInputElement} element - The DOM/HTML element for this
+     * {@code Component}'s input.
+     * @private
+     * @returns {void}
+     */
+    _setCopyElement(element: Object) {
+        this._copyElement = element;
     }
 
     _canGenerateToken: () => void;
@@ -228,8 +364,9 @@ class SxAddPeopleDialog extends Component<Props, State> {
             email,
             room: APP.conference.roomName
         } ]).then(tokens => {
-            console.log(tokens[0]);
-            this.props.dispatch(hideDialog());
+            const { token } = tokens[0];
+
+            this.setState({ inviteeJWT: token });
         })
             .catch(err => {
                 console.log(err);
@@ -254,6 +391,7 @@ class SxAddPeopleDialog extends Component<Props, State> {
         }
 
         const { t } = this.props;
+        const { addToCallErrorMessage } = this.state;
         const supportString = t('inlineDialogFailure.supportMsg');
         const supportLink = interfaceConfig.SUPPORT_URL;
         const supportLinkContent
@@ -277,6 +415,7 @@ class SxAddPeopleDialog extends Component<Props, State> {
         return (
             <div className = 'modal-dialog-form-error'>
                 <InlineMessage
+                    secondaryText = { addToCallErrorMessage }
                     title = { t('addPeople.failedToAdd') }
                     type = 'error'>
                     { supportLinkContent }
@@ -294,17 +433,21 @@ class SxAddPeopleDialog extends Component<Props, State> {
  * @param {Object} state - The Redux state.
  * @private
  * @returns {{
- *     displayName: string,
- *     addToCallErrorMessage: string,
- *     email: Array<string>,
+ *     inviteURL: string,
+ *     conferenceName: string,
+ *     conferencePassword: string
  * }}
  */
 function _mapStateToProps(state) {
+    const {
+        password,
+        room
+    } = state['features/base/conference'];
+
     return {
-        displayName: null,
-        email: null,
-        addToCallErrorMessage: '',
-        ..._abstractMapStateToProps(state)
+        inviteURL: getInviteURL(state),
+        conferenceName: room,
+        conferencePassword: password
     };
 }
 

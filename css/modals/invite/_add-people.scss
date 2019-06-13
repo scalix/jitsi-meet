@@ -4,6 +4,13 @@
 .modal-dialog-form {
     .add-people-form-wrap {
 
+        .info-dialog-copy-element {
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+            -webkit-user-select: text;
+            user-select: text;
+        }
         .sx-invite-edit {
             display: inline-flex;
             width: 100%;
