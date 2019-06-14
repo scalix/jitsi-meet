@@ -82,7 +82,12 @@ export type State = {
     /**
      * Invitee jwt token.
      */
-    inviteeJWT: string
+    inviteeJWT: string,
+
+    /**
+     * Dummy state
+     */
+    notifications: boolean
 }
 
 /**
@@ -96,10 +101,13 @@ class SxAddPeopleDialog extends Component<Props, State> {
         addToCallInProgress: false,
         displayName: '',
         email: '',
-        inviteeJWT: ''
+        inviteeJWT: '',
+        notifications: false
     }
 
     _copyElement = null;
+
+    notifications = []
 
     /**
      * Initializes a new {@code AddPeopleDialog} instance.
@@ -117,6 +125,7 @@ class SxAddPeopleDialog extends Component<Props, State> {
         this._canGenerateToken = this._canGenerateToken.bind(this);
         this._setCopyElement = this._setCopyElement.bind(this);
         this._onCopyInviteURL = this._onCopyInviteURL.bind(this);
+        this._getTextToCopy = this._getTextToCopy.bind(this);
 
     }
 
@@ -172,6 +181,16 @@ class SxAddPeopleDialog extends Component<Props, State> {
             </div>
             );
         }
+        const notifs = this.notifications.map((notif, index, object) => {
+            object.splice(index);
+
+            return (
+                <InlineMessage
+                    key = { index }
+                    title = { notif }
+                    type = 'info' />
+            );
+        });
 
         return (
             <Dialog
@@ -181,6 +200,7 @@ class SxAddPeopleDialog extends Component<Props, State> {
                 titleKey = 'addPeople.title'
                 width = 'medium'>
                 <div className = 'add-people-form-wrap'>
+                    { notifs }
                     { link }
                     { this._renderErrorMessage() }
                     { this._renderInvitee() }
@@ -209,7 +229,7 @@ class SxAddPeopleDialog extends Component<Props, State> {
         return `${inviteURL}?jwt=${inviteeJWT}`;
     }
 
-    _getTextToCopy: () => void;
+    _getTextToCopy: () => string;
 
     /**
      * Creates a message describing how to dial in to the conference.
@@ -252,6 +272,8 @@ class SxAddPeopleDialog extends Component<Props, State> {
             this._copyElement && this._copyElement.select();
             document.execCommand('copy');
             this._copyElement && this._copyElement.blur();
+            this.notifications.push('Url copied to clipboard');
+            this.setState({ notifications: true });
         } catch (err) {
             console.log(err);
         }
@@ -348,6 +370,7 @@ class SxAddPeopleDialog extends Component<Props, State> {
      */
     _onSubmit() {
         const { displayName, email } = this.state;
+        const { t } = this.props;
 
         if (!this._canGenerateToken()) {
             this.setState({
@@ -357,22 +380,66 @@ class SxAddPeopleDialog extends Component<Props, State> {
 
             return;
         }
-        this.setState({ addToCallError: false });
+        this.setState({
+            addToCallError: false,
+            addToCallInProgress: true
+        });
 
         APP.connection.generateToken([ {
             username: displayName,
             email,
             room: APP.conference.roomName
         } ]).then(tokens => {
-            const { token } = tokens[0];
+            const { token, email: email_ } = tokens[0];
 
             this.setState({ inviteeJWT: token });
+            this.notifications.push('Sending email to the user');
+
+            const body = this._getTextToCopy();
+            const emails = [
+                {
+                    to: email_,
+                    subject: t('info.inviteURLFirstPartGeneral'),
+                    body: [
+                        {
+                            type: 'text/plain',
+                            text: body
+                        },
+                        {
+                            type: 'text/html',
+                            text: `<html><body>${body}</body></html>`
+                        }
+                    ]
+                }
+            ];
+
+            APP.connection.sendEmail(emails).then(item => {
+                if (item[0].sent) {
+                    this.notifications.push(`Email was sent to the user${email_}`);
+                } else {
+                    this.setState({
+                        addToCallError: true,
+                        addToCallErrorMessage: `Unable to sent email to ${email_}`
+                    });
+                }
+            })
+                .catch(err => {
+                    console.log(err);
+                    this.setState({
+                        addToCallError: true,
+                        addToCallErrorMessage: 'Some fields are empty or broken connection.'
+                    });
+                })
+                .finally(() => {
+                    this.setState({ addToCallInProgress: false });
+                });
         })
             .catch(err => {
                 console.log(err);
                 this.setState({
                     addToCallError: true,
-                    addToCallErrorMessage: 'Some fields are empty or broken connection.'
+                    addToCallErrorMessage: 'Some fields are empty or broken connection.',
+                    addToCallInProgress: false
                 });
             });
 

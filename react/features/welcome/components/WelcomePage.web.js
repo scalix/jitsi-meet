@@ -111,11 +111,11 @@ class WelcomePage extends AbstractWelcomePage {
             this.setState({ reload: false });
         })
             .catch(err => {
+                console.error(err);
+                APP.UI.notifyInternalError(err);
                 if (APP.connection) {
                     APP.connection.diconnect();
                 }
-                APP.UI.notifyInternalError(err);
-                console.error(err);
             });
     }
 
