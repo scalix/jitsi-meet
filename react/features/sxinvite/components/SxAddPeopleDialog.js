@@ -13,6 +13,7 @@ import { connect } from '../../base/redux';
 
 import { FieldTextStateless } from '@atlaskit/field-text';
 import { getInviteURL } from '../../base/connection';
+import { getLocalParticipant } from '../../base/participants';
 
 declare var interfaceConfig: Object;
 declare var APP: Object;
@@ -46,8 +47,12 @@ type Props = {
     /**
      * Url for current conference.
      */
-    inviteURL: string
+    inviteURL: string,
 
+    /**
+     * Local participant
+     */
+    _localParticipant: Object
 };
 
 export type State = {
@@ -158,7 +163,7 @@ class SxAddPeopleDialog extends Component<Props, State> {
      */
     render() {
         const { t } = this.props;
-        const { inviteeJWT } = this.state;
+        const { inviteeJWT, addToCallInProgress } = this.state;
 
         let link = '';
 
@@ -194,7 +199,7 @@ class SxAddPeopleDialog extends Component<Props, State> {
 
         return (
             <Dialog
-                okDisabled = { this._canGenerateToken() === false }
+                okDisabled = { addToCallInProgress === false ? this._canGenerateToken() === false : true }
                 okKey = 'addPeople.add'
                 onSubmit = { this._onSubmit }
                 titleKey = 'addPeople.title'
@@ -238,9 +243,11 @@ class SxAddPeopleDialog extends Component<Props, State> {
      * @returns {string}
      */
     _getTextToCopy() {
-        const { conferenceName, t } = this.props;
+        const { _localParticipant, conferenceName, t } = this.props;
 
-        let invite = t('info.inviteURLFirstPartGeneral');
+        let invite = _localParticipant && _localParticipant.name
+            ? t('info.inviteURLFirstPartPersonal', { name: _localParticipant.name })
+            : t('info.inviteURLFirstPartGeneral');
         const moreInfo = t('info.inviteURLMoreInfo',
             { conferenceID: conferenceName });
 
@@ -369,8 +376,12 @@ class SxAddPeopleDialog extends Component<Props, State> {
      * @returns {void}
      */
     _onSubmit() {
-        const { displayName, email } = this.state;
+        const { displayName, email, addToCallInProgress } = this.state;
         const { t } = this.props;
+
+        if (addToCallInProgress) {
+            return;
+        }
 
         if (!this._canGenerateToken()) {
             this.setState({
@@ -392,8 +403,8 @@ class SxAddPeopleDialog extends Component<Props, State> {
         } ]).then(tokens => {
             const { token, email: email_ } = tokens[0];
 
-            this.setState({ inviteeJWT: token });
             this.notifications.push('Sending email to the user');
+            this.setState({ inviteeJWT: token });
 
             const body = this._getTextToCopy();
             const emails = [
@@ -415,7 +426,7 @@ class SxAddPeopleDialog extends Component<Props, State> {
 
             APP.connection.sendEmail(emails).then(item => {
                 if (item[0].sent) {
-                    this.notifications.push(`Email was sent to the user${email_}`);
+                    this.notifications.push(`Email was sent to the user ${email_}`);
                 } else {
                     this.setState({
                         addToCallError: true,
@@ -514,7 +525,8 @@ function _mapStateToProps(state) {
     return {
         inviteURL: getInviteURL(state),
         conferenceName: room,
-        conferencePassword: password
+        conferencePassword: password,
+        _localParticipant: getLocalParticipant(state)
     };
 }
 
