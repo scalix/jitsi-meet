@@ -100,17 +100,6 @@ UI.notifyReservationError = function(code, msg) {
 };
 
 /**
- * Notify user that he has been kicked from the server.
- */
-UI.notifyKicked = function() {
-    messageHandler.showError({
-        hideErrorSupportLink: true,
-        descriptionKey: 'dialog.kickMessage',
-        titleKey: 'dialog.kickTitle'
-    });
-};
-
-/**
  * Notify user that conference was destroyed.
  * @param reason {string} the reason text
  */
@@ -167,8 +156,6 @@ UI.getSharedVideoManager = function() {
  * established, false - otherwise (for example in the case of welcome page)
  */
 UI.start = function() {
-    document.title = interfaceConfig.APP_NAME;
-
     // Set the defaults for prompt dialogs.
     $.prompt.setDefaults({ persistent: false });
 
@@ -200,8 +187,6 @@ UI.start = function() {
         APP.store.dispatch(setNotificationsEnabled(false));
         UI.messageHandler.enablePopups(false);
     }
-
-    document.title = interfaceConfig.APP_NAME;
 };
 
 /**
@@ -240,22 +225,11 @@ UI.unbindEvents = () => {
 };
 
 /**
- * Show local stream on UI.
+ * Show local video stream on UI.
  * @param {JitsiTrack} track stream to show
  */
-UI.addLocalStream = track => {
-    switch (track.getType()) {
-    case 'audio':
-        // Local audio is not rendered so no further action is needed at this
-        // point.
-        break;
-    case 'video':
-        VideoLayout.changeLocalVideo(track);
-        break;
-    default:
-        logger.error(`Unknown stream type: ${track.getType()}`);
-        break;
-    }
+UI.addLocalVideoStream = track => {
+    VideoLayout.changeLocalVideo(track);
 };
 
 /**
@@ -521,8 +495,8 @@ UI.dockToolbar = dock => APP.store.dispatch(dockToolbox(dock));
  * @param {string} avatarURL - The URL to avatar image to display.
  * @returns {void}
  */
-UI.refreshAvatarDisplay = function(id, avatarURL) {
-    VideoLayout.changeUserAvatar(id, avatarURL);
+UI.refreshAvatarDisplay = function(id) {
+    VideoLayout.changeUserAvatar(id);
 };
 
 /**

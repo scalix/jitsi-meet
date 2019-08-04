@@ -16,6 +16,10 @@ import { setParticipantsWithScreenShare } from './actions';
 declare var APP: Object;
 declare var interfaceConfig: Object;
 
+// TODO: interfaceConfig should be in redux so we didn't have to do this.
+const AUTO_PIN_LATEST_SCREEN_SHARE
+    = typeof interfaceConfig === 'object' ? interfaceConfig.AUTO_PIN_LATEST_SCREEN_SHARE : 'remote-only';
+
 /**
  * StateListenerRegistry provides a reliable way of detecting changes to
  * preferred layout state and dispatching additional actions.
@@ -31,14 +35,9 @@ StateListenerRegistry.register(
             dispatch(
                 setMaxReceiverVideoQuality(VIDEO_QUALITY_LEVELS.HIGH));
 
-            if (typeof interfaceConfig === 'object'
-                && interfaceConfig.AUTO_PIN_LATEST_SCREEN_SHARE) {
+            if (AUTO_PIN_LATEST_SCREEN_SHARE) {
                 _updateAutoPinnedParticipant(store);
             }
-        }
-
-        if (typeof APP === 'object') {
-            APP.API.notifyTileViewChanged(displayTileView);
         }
     }
 );
@@ -50,8 +49,7 @@ StateListenerRegistry.register(
 StateListenerRegistry.register(
     /* selector */ state => state['features/base/tracks'],
     /* listener */ (tracks, store) => {
-        if (typeof interfaceConfig !== 'object'
-            || !interfaceConfig.AUTO_PIN_LATEST_SCREEN_SHARE) {
+        if (!AUTO_PIN_LATEST_SCREEN_SHARE) {
             return;
         }
 
@@ -59,7 +57,12 @@ StateListenerRegistry.register(
             = store.getState()['features/video-layout'].screenShares || [];
         const knownSharingParticipantIds = tracks.reduce((acc, track) => {
             if (track.mediaType === 'video' && track.videoType === 'desktop') {
-                acc.push(track.participantId);
+                const skipTrack
+                    = AUTO_PIN_LATEST_SCREEN_SHARE === 'remote-only' && track.local;
+
+                if (!skipTrack) {
+                    acc.push(track.participantId);
+                }
             }
 
             return acc;

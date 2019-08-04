@@ -372,6 +372,13 @@ changes. The listener will receive an object with the following structure:
     email: string // the new email
 }
 ```
+* **feedbackSubmitted** - event notifications about conference feedback submission
+```javascript
+{
+    error: string // The error which occurred during submission, if any.
+}
+```
+
 * **filmstripDisplayChanged** - event notifications about the visibility of the filmstrip being updated.
 ```javascript
 {
@@ -384,6 +391,19 @@ changes. The listener will receive an object with the following structure:
 {
     id: string, // the id of the participant
     displayName: string // the display name of the participant
+}
+```
+
+* **participantKickedOut** - event notifications about a participants being removed from the room. The listener will receive an object with the following structure:
+```javascript
+{
+    kicked: {
+        id: string, // the id of the participant removed from the room
+        local: boolean // whether or not the participant is the local particiapnt
+    },
+    kicker: {
+        id: string // the id of the participant who kicked out the other participant
+    }
 }
 ```
 
@@ -436,6 +456,8 @@ The listener will receive an object with the following structure:
     subject: string // the new subject
 }
 ```
+
+* **suspendDetected** - event notifications about detecting suspend event in host computer.
 
 You can also add multiple event listeners by using `addEventListeners`.
 This method requires one argument of type Object. The object argument must

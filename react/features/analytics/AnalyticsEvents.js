@@ -272,6 +272,18 @@ export function createInviteDialogEvent(
 }
 
 /**
+ * Creates an "offer/answer failure" event.
+ *
+ * @returns {Object} The event in a format suitable for sending via
+ * sendAnalytics.
+ */
+export function createOfferAnswerFailedEvent() {
+    return {
+        action: 'offer.answer.failure'
+    };
+}
+
+/**
  * Creates a "page reload" event.
  *
  * @param {string} reason - The reason for the reload.
@@ -416,6 +428,25 @@ export function createRecordingEvent(action, type, value) {
 }
 
 /**
+ * Creates an event which indicates that the same conference has been rejoined.
+ *
+ * @param {string} url - The full conference URL.
+ * @param {number} lastConferenceDuration - How many seconds user stayed in the previous conference.
+ * @param {number} timeSinceLeft - How many seconds since the last conference was left.
+ * @returns {Object} The event in a format suitable for sending via sendAnalytics.
+ */
+export function createRejoinedEvent({ url, lastConferenceDuration, timeSinceLeft }) {
+    return {
+        action: 'rejoined',
+        attributes: {
+            lastConferenceDuration,
+            timeSinceLeft,
+            url
+        }
+    };
+}
+
+/**
  * Creates an event which specifies that the "confirm" button on the remote
  * mute dialog has been clicked.
  *
@@ -452,6 +483,21 @@ export function createRemoteVideoMenuButtonEvent(buttonName, attributes) {
         attributes,
         source: 'remote.video.menu',
         type: TYPE_UI
+    };
+}
+
+/**
+ * Creates an event indicating that an action related to video blur
+ * occurred (e.g. It was started or stopped).
+ *
+ * @param {string} action - The action which occurred.
+ * @returns {Object} The event in a format suitable for sending via
+ * sendAnalytics.
+ */
+export function createVideoBlurEvent(action) {
+    return {
+        action,
+        actionSubject: 'video.blur'
     };
 }
 
@@ -548,6 +594,18 @@ export function createStartAudioOnlyEvent(audioOnly) {
         attributes: {
             enabled: audioOnly
         }
+    };
+}
+
+/**
+ * Creates an event which indicates the "start silent" configuration.
+ *
+ * @returns {Object} The event in a format suitable for sending via
+ * sendAnalytics.
+ */
+export function createStartSilentEvent() {
+    return {
+        action: 'start.silent'
     };
 }
 

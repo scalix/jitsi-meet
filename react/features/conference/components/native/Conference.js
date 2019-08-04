@@ -1,7 +1,8 @@
 // @flow
 
 import React from 'react';
-import { BackHandler, NativeModules, SafeAreaView, StatusBar, View } from 'react-native';
+import { NativeModules, SafeAreaView, StatusBar, View } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 
 import { appNavigate } from '../../../app';
 import { PIP_ENABLED, getFeatureFlag } from '../../../base/flags';
@@ -23,6 +24,7 @@ import {
     TileView
 } from '../../../filmstrip';
 import { LargeVideo } from '../../../large-video';
+import { BackButtonRegistry } from '../../../mobile/back-button';
 import { AddPeopleDialog, CalleeInfoContainer } from '../../../invite';
 import { Captions } from '../../../subtitles';
 import { setToolboxVisible, Toolbox } from '../../../toolbox';
@@ -33,7 +35,7 @@ import {
 } from '../AbstractConference';
 import Labels from './Labels';
 import NavigationBar from './NavigationBar';
-import styles from './styles';
+import styles, { NAVBAR_GRADIENT_COLORS } from './styles';
 
 import type { AbstractProps } from '../AbstractConference';
 
@@ -112,13 +114,6 @@ type Props = AbstractProps & {
     _toolboxVisible: boolean,
 
     /**
-     * The indicator which determines whether the Toolbox is always visible.
-     *
-     * @private
-     */
-    _toolboxAlwaysVisible: boolean,
-
-    /**
      * The redux {@code dispatch} function.
      */
     dispatch: Function
@@ -151,7 +146,7 @@ class Conference extends AbstractConference<Props, *> {
      * @returns {void}
      */
     componentDidMount() {
-        BackHandler.addEventListener('hardwareBackPress', this._onHardwareBackPress);
+        BackButtonRegistry.addListener(this._onHardwareBackPress);
 
         // Show the toolbox if we are the only participant; otherwise, the whole
         // UI looks too unpopulated the LargeVideo visible.
@@ -193,7 +188,7 @@ class Conference extends AbstractConference<Props, *> {
      */
     componentWillUnmount() {
         // Tear handling any hardware button presses for back navigation down.
-        BackHandler.removeEventListener('hardwareBackPress', this._onHardwareBackPress);
+        BackButtonRegistry.removeListener(this._onHardwareBackPress);
     }
 
     /**
@@ -205,10 +200,14 @@ class Conference extends AbstractConference<Props, *> {
     render() {
         const {
             _connecting,
+            _filmstripVisible,
             _largeVideoParticipantId,
             _reducedUI,
-            _shouldDisplayTileView
+            _shouldDisplayTileView,
+            _toolboxVisible
         } = this.props;
+        const showGradient = _toolboxVisible;
+        const applyGradientStretching = _filmstripVisible && isNarrowAspectRatio(this) && !_shouldDisplayTileView;
 
         return (
             <Container style = { styles.conference }>
@@ -248,6 +247,22 @@ class Conference extends AbstractConference<Props, *> {
                     pointerEvents = 'box-none'
                     style = { styles.toolboxAndFilmstripContainer }>
 
+                    { showGradient && <LinearGradient
+                        colors = { NAVBAR_GRADIENT_COLORS }
+                        end = {{
+                            x: 0.0,
+                            y: 0.0
+                        }}
+                        pointerEvents = 'none'
+                        start = {{
+                            x: 0.0,
+                            y: 1.0
+                        }}
+                        style = { [
+                            styles.bottomGradient,
+                            applyGradientStretching ? styles.gradientStretchBottom : undefined
+                        ] } />}
+
                     <Labels />
 
                     <Captions onPress = { this._onClick } />
@@ -255,7 +270,7 @@ class Conference extends AbstractConference<Props, *> {
                     { _shouldDisplayTileView || <DisplayNameLabel participantId = { _largeVideoParticipantId } /> }
 
                     {/*
-                      * The Toolbox is in a stacking layer bellow the Filmstrip.
+                      * The Toolbox is in a stacking layer below the Filmstrip.
                       */}
                     <Toolbox />
 
@@ -298,10 +313,6 @@ class Conference extends AbstractConference<Props, *> {
      * @returns {void}
      */
     _onClick() {
-        if (this.props._toolboxAlwaysVisible) {
-            return;
-        }
-
         this._setToolboxVisible(!this.props._toolboxVisible);
     }
 
@@ -407,7 +418,7 @@ function _mapStateToProps(state) {
         leaving
     } = state['features/base/conference'];
     const { reducedUI } = state['features/base/responsive-ui'];
-    const { alwaysVisible, visible } = state['features/toolbox'];
+    const { visible } = state['features/toolbox'];
 
     // XXX There is a window of time between the successful establishment of the
     // XMPP connection and the subsequent commencement of joining the MUC during
@@ -484,15 +495,7 @@ function _mapStateToProps(state) {
          * @private
          * @type {boolean}
          */
-        _toolboxVisible: visible,
-
-        /**
-         * The indicator which determines whether the Toolbox is always visible.
-         *
-         * @private
-         * @type {boolean}
-         */
-        _toolboxAlwaysVisible: alwaysVisible
+        _toolboxVisible: visible
     };
 }
 

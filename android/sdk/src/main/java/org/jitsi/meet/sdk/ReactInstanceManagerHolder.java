@@ -17,6 +17,7 @@
 
 package org.jitsi.meet.sdk;
 
+import android.app.Activity;
 import android.app.Application;
 import android.support.annotation.Nullable;
 
@@ -28,6 +29,17 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.common.LifecycleState;
 import com.facebook.react.devsupport.DevInternalSettings;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.facebook.react.uimanager.ViewManager;
+import com.oney.WebRTCModule.RTCVideoViewManager;
+import com.oney.WebRTCModule.WebRTCModule;
+
+import org.webrtc.SoftwareVideoDecoderFactory;
+import org.webrtc.SoftwareVideoEncoderFactory;
+import org.webrtc.VideoDecoderFactory;
+import org.webrtc.VideoEncoderFactory;
+import org.webrtc.audio.AudioDeviceModule;
+import org.webrtc.audio.JavaAudioDeviceModule;
+import org.webrtc.voiceengine.WebRtcAudioManager;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -46,8 +58,7 @@ class ReactInstanceManagerHolder {
      */
     private static ReactInstanceManager reactInstanceManager;
 
-    private static List<NativeModule> createNativeModules(
-            ReactApplicationContext reactContext) {
+    private static List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
         List<NativeModule> nativeModules
             = new ArrayList<>(Arrays.<NativeModule>asList(
                 new AndroidSettingsModule(reactContext),
@@ -65,6 +76,21 @@ class ReactInstanceManagerHolder {
             nativeModules.add(new RNConnectionService(reactContext));
         }
 
+        // Initialize the WebRTC module by hand, since we want to override some
+        // initialization options.
+        WebRTCModule.Options options = new WebRTCModule.Options();
+
+        AudioDeviceModule adm = JavaAudioDeviceModule.builder(reactContext)
+            .createAudioDeviceModule();
+        VideoDecoderFactory videoDecoderFactory = new SoftwareVideoDecoderFactory();
+        VideoEncoderFactory videoEncoderFactory = new SoftwareVideoEncoderFactory();
+
+        options.setAudioDeviceModule(adm);
+        options.setVideoDecoderFactory(videoDecoderFactory);
+        options.setVideoEncoderFactory(videoEncoderFactory);
+
+        nativeModules.add(new WebRTCModule(reactContext, options));
+
         try {
             Class<?> amplitudeModuleClass = Class.forName("org.jitsi.meet.sdk.AmplitudeModule");
             Constructor constructor = amplitudeModuleClass.getConstructor(ReactApplicationContext.class);
@@ -74,6 +100,13 @@ class ReactInstanceManagerHolder {
         }
 
         return nativeModules;
+    }
+
+    private static List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
+        return Arrays.<ViewManager>asList(
+            // WebRTC, see createNativeModules for details.
+            new RTCVideoViewManager()
+        );
     }
 
     /**
@@ -120,6 +153,18 @@ class ReactInstanceManagerHolder {
                 ? reactContext.getNativeModule(nativeModuleClass) : null;
     }
 
+    /**
+     * Gets the current {@link Activity} linked to React Native.
+     *
+     * @return An activity attached to React Native.
+     */
+    static Activity getCurrentActivity() {
+        ReactContext reactContext
+            = reactInstanceManager != null
+            ? reactInstanceManager.getCurrentReactContext() : null;
+        return reactContext != null ? reactContext.getCurrentActivity() : null;
+    }
+
     static ReactInstanceManager getReactInstanceManager() {
         return reactInstanceManager;
     }
@@ -142,11 +187,9 @@ class ReactInstanceManagerHolder {
                 new com.BV.LinearGradient.LinearGradientPackage(),
                 new com.calendarevents.CalendarEventsPackage(),
                 new com.corbt.keepawake.KCKeepAwakePackage(),
-                new com.dylanvann.fastimage.FastImageViewPackage(),
                 new com.facebook.react.shell.MainReactPackage(),
                 new com.oblador.vectoricons.VectorIconsPackage(),
                 new com.ocetnik.timer.BackgroundTimerPackage(),
-                new com.oney.WebRTCModule.WebRTCModulePackage(),
                 new com.reactnativecommunity.asyncstorage.AsyncStoragePackage(),
                 new com.reactnativecommunity.webview.RNCWebViewPackage(),
                 new com.rnimmersive.RNImmersivePackage(),
@@ -155,6 +198,10 @@ class ReactInstanceManagerHolder {
                     @Override
                     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
                         return ReactInstanceManagerHolder.createNativeModules(reactContext);
+                    }
+                    @Override
+                    public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
+                        return ReactInstanceManagerHolder.createViewManagers(reactContext);
                     }
                 }));
 
@@ -182,5 +229,8 @@ class ReactInstanceManagerHolder {
         if (devSettings != null) {
             devSettings.setBundleDeltasEnabled(false);
         }
+
+        // Register our uncaught exception handler.
+        JitsiMeetUncaughtExceptionHandler.register();
     }
 }

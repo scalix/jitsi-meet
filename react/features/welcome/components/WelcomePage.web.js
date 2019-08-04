@@ -156,6 +156,7 @@ class WelcomePage extends AbstractWelcomePage {
         if (loading || !APP.connection) {
             return (
                 <img
+                    alt = 'loading img'
                     height = '100%'
                     src = './images/index.futuristic-game-interface-preloader.svg'
                     width = '100%' />
