@@ -34,6 +34,7 @@ const commands = {
     email: 'email',
     hangup: 'video-hangup',
     password: 'password',
+    sendTones: 'send-tones',
     subject: 'subject',
     submitFeedback: 'submit-feedback',
     toggleAudio: 'toggle-audio',
@@ -364,6 +365,30 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
         }
 
         return iframe.contentWindow.document.getElementById('largeVideo');
+    }
+
+    /**
+     * Getter for participant specific video element in Jitsi Meet.
+     *
+     * @param {string|undefined} participantId - Id of participant to return the video for.
+     *
+     * @returns {HTMLElement|undefined} - The requested video. Will return the local video
+     * by default if participantId is undefined.
+     */
+    _getParticipantVideo(participantId) {
+        const iframe = this.getIFrame();
+
+        if (!iframe
+                || !iframe.contentWindow
+                || !iframe.contentWindow.document) {
+            return;
+        }
+
+        if (typeof participantId === 'undefined' || participantId === this._myUserID) {
+            return iframe.contentWindow.document.getElementById('localVideo_container');
+        }
+
+        return iframe.contentWindow.document.querySelector(`#participant_${participantId} video`);
     }
 
     /**
