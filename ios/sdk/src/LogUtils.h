@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef JM_REACTUTILS_H
-#define JM_REACTUTILS_H
+#ifndef JM_LOG_UTILS_H
+#define JM_LOG_UTILS_H
 
-NSMutableDictionary* mergeProps(NSDictionary *a, NSDictionary *b);
-void registerReactFatalErrorHandler(void);
-void registerReactLogHandler(void);
+#import <CocoaLumberjack/CocoaLumberjack.h>
+static const DDLogLevel ddLogLevel = DDLogLevelVerbose;
 
-#endif /* JM_REACTUTILS_H */
+#endif

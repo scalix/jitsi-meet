@@ -14,11 +14,26 @@
  * limitations under the License.
  */
 
-#ifndef JM_REACTUTILS_H
-#define JM_REACTUTILS_H
+package org.jitsi.meet.sdk.log;
 
-NSMutableDictionary* mergeProps(NSDictionary *a, NSDictionary *b);
-void registerReactFatalErrorHandler(void);
-void registerReactLogHandler(void);
+import android.util.Log;
 
-#endif /* JM_REACTUTILS_H */
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * Default implementation of a {@link JitsiMeetBaseLogHandler}. This is the main SDK logger, which
+ * logs using the Android util.Log module.
+ */
+public class JitsiMeetDefaultLogHandler extends JitsiMeetBaseLogHandler {
+    private static final String TAG = "JitsiMeetSDK";
+
+    @Override
+    protected void doLog(int priority, @NotNull String tag, @NotNull String msg) {
+        Log.println(priority, tag, msg);
+    }
+
+    @Override
+    protected String getTag() {
+        return TAG;
+    }
+}

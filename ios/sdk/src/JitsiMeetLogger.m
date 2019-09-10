@@ -14,11 +14,27 @@
  * limitations under the License.
  */
 
-#ifndef JM_REACTUTILS_H
-#define JM_REACTUTILS_H
+#import "LogUtils.h"
+#import "JitsiMeetLogger.h"
+#import "JitsiMeetBaseLogHandler+Private.h"
 
-NSMutableDictionary* mergeProps(NSDictionary *a, NSDictionary *b);
-void registerReactFatalErrorHandler(void);
-void registerReactLogHandler(void);
 
-#endif /* JM_REACTUTILS_H */
+@implementation JitsiMeetLogger
+
+/**
+* This gets called automagically when the program starts.
+*/
+__attribute__((constructor))
+static void initializeLogger() {
+    [DDLog addLogger:[DDOSLogger sharedInstance]];
+}
+
++ (void)addHandler:(JitsiMeetBaseLogHandler *)handler {
+    [DDLog addLogger:handler.logger];
+}
+
++ (void)removeHandler:(JitsiMeetBaseLogHandler *)handler {
+    [DDLog removeLogger:handler.logger];
+}
+
+@end

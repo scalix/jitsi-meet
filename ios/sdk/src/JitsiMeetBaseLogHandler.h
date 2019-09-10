@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef JM_REACTUTILS_H
-#define JM_REACTUTILS_H
+#import <Foundation/Foundation.h>
 
-NSMutableDictionary* mergeProps(NSDictionary *a, NSDictionary *b);
-void registerReactFatalErrorHandler(void);
-void registerReactLogHandler(void);
+@interface JitsiMeetBaseLogHandler : NSObject
 
-#endif /* JM_REACTUTILS_H */
+// These are "abstract".
+- (void)logVerbose:(NSString *)msg;
+- (void)logDebug:(NSString *)msg;
+- (void)logInfo:(NSString *)msg;
+- (void)logWarn:(NSString *)msg;
+- (void)logError:(NSString *)msg;
+
+@end
