@@ -25,7 +25,10 @@ function getPerformanceHints(size) {
     return {
         hints: minimize ? 'error' : false,
         maxAssetSize: size,
-        maxEntrypointSize: size
+        maxEntrypointSize: size,
+        assetFilter(assetFilename) {
+            return assetFilename.endsWith('.js');
+        }
     };
 }
 
