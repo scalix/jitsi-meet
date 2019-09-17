@@ -208,8 +208,9 @@ class WelcomePage extends AbstractWelcomePage {
                                     className = 'enter-room-input'
                                     id = 'enter_room_field'
                                     onChange = { this._onRoomChange }
-                                    placeholder
-                                        = { this.state.roomPlaceholder }
+                                    pattern = '^[a-zA-Z0-9=\?]+$'
+                                    placeholder = { this.state.roomPlaceholder }
+                                    title = { t('welcomepage.onlyAsciiAllowed') }
                                     type = 'text'
                                     value = { this.state.room } />
                             </form>

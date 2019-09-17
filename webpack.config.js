@@ -9,7 +9,7 @@ const CompressionPlugin = require('compression-webpack-plugin');
  * development with webpack-dev-server.
  */
 const devServerProxyTarget
-    = process.env.WEBPACK_DEV_SERVER_PROXY_TARGET || 'https://beta.meet.jit.si';
+    = process.env.WEBPACK_DEV_SERVER_PROXY_TARGET || 'https://alpha.jitsi.net';
 
 const analyzeBundle = process.argv.indexOf('--analyze-bundle') !== -1;
 
@@ -124,6 +124,15 @@ const config = {
                     'react-focus-lock': `${__dirname}/node_modules/react-focus-lock`
                 }
             }
+        }, {
+            test: /\.svg$/,
+            use: [ {
+                loader: '@svgr/webpack',
+                options: {
+                    dimensions: false,
+                    expandProps: 'start'
+                }
+            } ]
         } ]
     },
     node: {
@@ -178,7 +187,7 @@ module.exports = [
         entry: {
             'device_selection_popup_bundle': './react/features/settings/popup.js'
         },
-        performance: getPerformanceHints(2.5 * 1024 * 1024)
+        performance: getPerformanceHints(700 * 1024)
     }),
     Object.assign({}, config, {
         entry: {
